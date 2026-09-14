@@ -1,4 +1,4 @@
-package com.example.proyecto_2;
+package com.example.servicio;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Import;
 
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
-class Proyecto2ApplicationTests {
+class ServicioApplicationTests {
 
 	@Test
 	void contextLoads() {
