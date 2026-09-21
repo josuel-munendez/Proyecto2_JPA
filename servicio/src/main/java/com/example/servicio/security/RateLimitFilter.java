@@ -11,8 +11,20 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Filtro HTTP para interceptar peticiones y aplicar Rate Limiting.
- * Retorna estado 429 (Too Many Requests) si se sobrepasa el limite.
+ * ============================================================================
+ * FILTRO HTTP DE SEGURIDAD: RateLimitFilter
+ * ============================================================================
+ * Intercepta todas las peticiones HTTP entrantes dirigidas a las rutas de la API (/api/**)
+ * antes de que alcancen los controladores.
+ *
+ * Flujo de Ejecución:
+ * 1. Extrae la dirección IP real del cliente (inspeccionando cabeceras de proxy como X-Forwarded-For).
+ * 2. Consulta al `RateLimitService` si la IP no ha rebasado la cuota por minuto.
+ * 3. Si la cuota fue superada:
+ *    - Corta la cadena de filtros de inmediato.
+ *    - Escribe directamente una respuesta JSON con código HTTP 429 TOO MANY REQUESTS.
+ * 4. Si la cuota es válida, delega la ejecución al siguiente filtro de la cadena (`filterChain.doFilter`).
+ * ============================================================================
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -28,7 +40,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        // Aplicar rate limiting solo a endpoints de la API REST
+        
+        // Aplicar el control de tasa exclusivamente a las rutas de la API REST
         if (path.startsWith("/api/")) {
             String clientIp = obtenerIpCliente(request);
             String method = request.getMethod();
@@ -50,6 +63,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * Extrae la IP de origen del cliente soportando entornos tras proxies inversos o balanceadores de carga.
+     *
+     * @param request Petición HTTP recibida.
+     * @return Dirección IP del cliente en formato String.
+     */
     private String obtenerIpCliente(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
