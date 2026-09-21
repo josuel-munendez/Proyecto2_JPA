@@ -1,8 +1,8 @@
 # Proyecto2_JPA
 
-Microservicio con orm  (jpa), con manejo de interfaces, con implementacion de metodos personalizados, con arquitectura odd(orientado al dominio) con validacion de datos  en el backend , manejo de codigo de estados , uso de herencia , documentacion de codigo, pruebas con postman , configuracion de sprin security, proyecto conectado a mysql.
+Microservicio con orm (jpa), con manejo de interfaces, con implementacion de metodos personalizados, con arquitectura odd(orientado al dominio) con validacion de datos  en el backend , manejo de codigo de estados , uso de herencia , documentacion de codigo, pruebas con postman , configuracion de sprin security, proyecto conectado a mysql.
 
-RETO: Consumir desde el proyecto principal [En mi caso: proyecto RED Estampación] un end point en JPA que gestione el CRUD de una tabla de su proyecto formativo
+RETO: Consumir desde el proyecto principal (En mi caso: proyecto RED Estampación [github.com/eliassidez123234dfs/projecto_formativo](https://github.com/eliassidez123234dfs/projecto_formativo)) un end point en JPA que gestione el CRUD de una tabla de su proyecto formativo
 
 1. HACER LA IMPLEMENTACION DE BUSQUEDAS POR 2 CAMPOS CON OPERADOR (Y) Y  BUSQUEDA POR 3 CAMPOS CON (OR)
 2. IMPLEMENTAR CONTROLLADOR DE MANEJO DE EXCEPCIONES

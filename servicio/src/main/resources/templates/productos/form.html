@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${titulo}">Formulario de Producto</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+<div class="container py-5" style="max-width: 600px;">
+    <div class="card p-4">
+        <h3 class="mb-4" th:text="${titulo}">Crear / Editar Producto</h3>
+
+        <form th:action="${productoId != null} ? @{'/productos/actualizar/' + ${productoId}} : @{/productos/guardar}"
+              th:object="${productoRequest}" method="post">
+
+            <div class="mb-3">
+                <label class="form-label">Nombre del Producto (*)</label>
+                <input type="text" th:field="*{nombre}" class="form-control"
+                       th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''"
+                       placeholder="Ej: Camiseta Oversize RED">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Referencia (*)</label>
+                <input type="text" th:field="*{referencia}" class="form-control"
+                       th:classappend="${#fields.hasErrors('referencia')} ? 'is-invalid' : ''"
+                       placeholder="Ej: CAM-001" th:readonly="${productoId != null}">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('referencia')}" th:errors="*{referencia}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Precio Base COP (*)</label>
+                <input type="number" step="50" th:field="*{precioBase}" class="form-control"
+                       th:classappend="${#fields.hasErrors('precioBase')} ? 'is-invalid' : ''"
+                       placeholder="Ej: 45000">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('precioBase')}" th:errors="*{precioBase}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Stock Disponible</label>
+                <input type="number" th:field="*{stock}" class="form-control"
+                       th:classappend="${#fields.hasErrors('stock')} ? 'is-invalid' : ''"
+                       placeholder="Ej: 25">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('stock')}" th:errors="*{stock}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Descripcion</label>
+                <textarea th:field="*{descripcion}" class="form-control"
+                          th:classappend="${#fields.hasErrors('descripcion')} ? 'is-invalid' : ''"
+                          rows="3" placeholder="Descripcion del producto..."></textarea>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="/productos" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Guardar Producto</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
