@@ -11,8 +11,17 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Configuracion de Spring Security para el microservicio JPA.
- * Proteccion de peticiones, deshabilitacion de CSRF para API stateless e integracion de RateLimitFilter.
+ * ============================================================================
+ * CONFIGURACIÓN DE SEGURIDAD: SecurityConfig (Spring Security)
+ * ============================================================================
+ * Configura la cadena de filtros de seguridad (SecurityFilterChain) para la aplicación.
+ *
+ * Características Implementadas:
+ * 1. CSRF Deshabilitado: Apropiado para APIs RESTful Stateless que utilizan tokens / autenticación basada en cabeceras.
+ * 2. Sesiones STATELESS: No crea sesiones HTTP en memoria en el servidor, optimizando rendimiento y escalabilidad.
+ * 3. Enrutamiento de Autorización: Permite el acceso público a la API y a las vistas web.
+ * 4. Integración de Filtros Personalizados: Registra `RateLimitFilter` antes de `UsernamePasswordAuthenticationFilter`.
+ * ============================================================================
  */
 @Configuration
 @EnableWebSecurity
@@ -24,6 +33,13 @@ public class SecurityConfig {
         this.rateLimitFilter = rateLimitFilter;
     }
 
+    /**
+     * Define la cadena de filtros de seguridad HTTP.
+     *
+     * @param http Objeto HttpSecurity para personalizar la seguridad web.
+     * @return SecurityFilterChain ensamblada.
+     * @throws Exception En caso de errores en la configuración de Spring Security.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
