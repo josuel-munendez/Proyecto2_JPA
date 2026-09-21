@@ -2,23 +2,14 @@ package com.example.servicio.entity;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-
 /**
- * Clase base abstracta para entidades que requieren auditoria de fechas.
+ * Clase base abstracta para documentos MongoDB que requieren auditoria de fechas.
  * Proporciona campos de creacion y actualizacion automaticos.
- * Utiliza @MappedSuperclass para que las entidades hijas hereden estos campos.
+ * MongoDB no tiene @PrePersist/@PreUpdate, por lo que se llaman manualmente desde el Service.
  */
-@MappedSuperclass
 public abstract class BaseEntity {
 
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     public LocalDateTime getCreatedAt() {
@@ -38,22 +29,20 @@ public abstract class BaseEntity {
     }
 
     /**
-     * Callback de JPA que se ejecuta antes de persistir una entidad nueva.
      * Establece ambas fechas de auditoria con la fecha y hora actual.
+     * Se llama manualmente al crear un documento nuevo.
      */
-    @PrePersist
-    protected void onCreate() {
+    public void onCreate() {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
     }
 
     /**
-     * Callback de JPA que se ejecuta antes de actualizar una entidad existente.
-     * Actualiza solo la fecha de modificacion.
+     * Actualiza la fecha de modificacion con la fecha y hora actual.
+     * Se llama manualmente al actualizar un documento existente.
      */
-    @PreUpdate
-    protected void onUpdate() {
+    public void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
 }

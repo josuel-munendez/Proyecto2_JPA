@@ -26,15 +26,15 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public ProductoResponse crearProducto(ProductoRequest request) {
-        log.info("JPA: Creando nuevo producto con referencia: {}", request.getReferencia());
+        log.info("MongoDB: Creando nuevo producto con referencia: {}", request.getReferencia());
 
         if (productoRepository.existsByNombre(request.getNombre())) {
-            log.warn("Intento fallido de creacion: El nombre '{}' ya existe", request.getNombre());
+            log.warn("Intento fallido de creacion: El nombre '{}' ya existe en MongoDB", request.getNombre());
             throw new BusinessRuleException("Ya existe un producto con el nombre: " + request.getNombre());
         }
 
         if (productoRepository.existsByReferencia(request.getReferencia())) {
-            log.warn("Intento fallido de creacion: La referencia '{}' ya existe", request.getReferencia());
+            log.warn("Intento fallido de creacion: La referencia '{}' ya existe en MongoDB", request.getReferencia());
             throw new BusinessRuleException("Ya existe un producto con la referencia: " + request.getReferencia());
         }
 
@@ -46,26 +46,27 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setStock(request.getStock() != null ? request.getStock() : 0);
         producto.setEstado(EstadoProducto.ACTIVO);
         producto.setAprobado(true);
+        producto.onCreate();
 
         Producto guardado = productoRepository.save(producto);
-        log.info("Producto creado exitosamente con JPA - ID: {}", guardado.getId());
+        log.info("Producto creado exitosamente en MongoDB con ID: {}", guardado.getId());
         return ProductoResponse.fromEntity(guardado);
     }
 
     @Override
-    public ProductoResponse obtenerPorId(Long id) {
-        log.info("JPA: Buscando producto por ID: {}", id);
+    public ProductoResponse obtenerPorId(String id) {
+        log.info("MongoDB: Buscando producto por ID: {}", id);
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> {
-                    log.error("Producto no encontrado con ID: {}", id);
+                    log.error("Producto no encontrado en MongoDB con ID: {}", id);
                     return new ResourceNotFoundException("Producto no encontrado con ID: " + id);
                 });
         return ProductoResponse.fromEntity(producto);
     }
 
     @Override
-    public ProductoResponse actualizarProducto(Long id, ProductoRequest request) {
-        log.info("JPA: Actualizando producto ID: {}", id);
+    public ProductoResponse actualizarProducto(String id, ProductoRequest request) {
+        log.info("MongoDB: Actualizando producto ID: {}", id);
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
 
@@ -81,32 +82,34 @@ public class ProductoServiceImpl implements ProductoService {
         if (request.getStock() != null) {
             producto.setStock(request.getStock());
         }
+        producto.onUpdate();
 
         Producto actualizado = productoRepository.save(producto);
-        log.info("Producto ID: {} actualizado correctamente con JPA", id);
+        log.info("Producto ID: {} actualizado correctamente en MongoDB", id);
         return ProductoResponse.fromEntity(actualizado);
     }
 
     @Override
-    public void cambiarEstado(Long id, EstadoProducto nuevoEstado) {
-        log.info("JPA: Cambiando estado del producto ID: {} a {}", id, nuevoEstado);
+    public void cambiarEstado(String id, EstadoProducto nuevoEstado) {
+        log.info("MongoDB: Cambiando estado del producto ID: {} a {}", id, nuevoEstado);
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
 
         producto.setEstado(nuevoEstado);
+        producto.onUpdate();
         productoRepository.save(producto);
         log.info("Estado del producto ID: {} actualizado a {}", id, nuevoEstado);
     }
 
     @Override
-    public void eliminarLogico(Long id) {
-        log.info("JPA: Realizando borrado logico del producto ID: {}", id);
+    public void eliminarLogico(String id) {
+        log.info("MongoDB: Realizando borrado logico del producto ID: {}", id);
         cambiarEstado(id, EstadoProducto.BORRADO);
     }
 
     @Override
     public Page<ProductoResponse> listarPaginado(Pageable pageable) {
-        log.info("JPA: Listando productos paginados - Pagina: {}, Tamanio: {}",
+        log.info("MongoDB: Listando productos paginados - Pagina: {}, Tamanio: {}",
                 pageable.getPageNumber(), pageable.getPageSize());
         return productoRepository.findByEstadoNot(EstadoProducto.BORRADO, pageable)
                 .map(ProductoResponse::fromEntity);
@@ -114,14 +117,14 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public Page<ProductoResponse> buscarPorNombreYEstado(String nombre, EstadoProducto estado, Pageable pageable) {
-        log.info("JPA: Busqueda AND (2 campos): nombre='{}', estado={}", nombre, estado);
-        return productoRepository.findByNombreContainingIgnoreCaseAndEstado(nombre, estado, pageable)
+        log.info("MongoDB: Busqueda AND (2 campos): nombre='{}', estado={}", nombre, estado);
+        return productoRepository.findByNombreRegexAndEstado(".*" + nombre + ".*", estado, pageable)
                 .map(ProductoResponse::fromEntity);
     }
 
     @Override
     public Page<ProductoResponse> buscarPor3CamposOr(String query, Pageable pageable) {
-        log.info("JPA: Busqueda OR (3 campos) con termino: '{}'", query);
+        log.info("MongoDB: Busqueda OR (3 campos) con termino regex: '{}'", query);
         return productoRepository.buscarPor3CamposOr(query, pageable)
                 .map(ProductoResponse::fromEntity);
     }

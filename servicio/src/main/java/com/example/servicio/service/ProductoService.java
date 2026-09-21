@@ -8,10 +8,10 @@ import org.springframework.data.domain.Pageable;
 
 public interface ProductoService {
     ProductoResponse crearProducto(ProductoRequest request);
-    ProductoResponse obtenerPorId(Long id);
-    ProductoResponse actualizarProducto(Long id, ProductoRequest request);
-    void cambiarEstado(Long id, EstadoProducto nuevoEstado);
-    void eliminarLogico(Long id);
+    ProductoResponse obtenerPorId(String id);
+    ProductoResponse actualizarProducto(String id, ProductoRequest request);
+    void cambiarEstado(String id, EstadoProducto nuevoEstado);
+    void eliminarLogico(String id);
 
     Page<ProductoResponse> listarPaginado(Pageable pageable);
     Page<ProductoResponse> buscarPorNombreYEstado(String nombre, EstadoProducto estado, Pageable pageable);

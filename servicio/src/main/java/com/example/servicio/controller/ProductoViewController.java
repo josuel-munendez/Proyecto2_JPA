@@ -2,7 +2,6 @@ package com.example.servicio.controller;
 
 import com.example.servicio.dto.ProductoRequest;
 import com.example.servicio.dto.ProductoResponse;
-import com.example.servicio.entity.Producto.EstadoProducto;
 import com.example.servicio.service.ProductoService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -17,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * Controlador Thymeleaf para JPA/PostgreSQL - Vistas del CRUD de productos.
+ * Controlador Thymeleaf para MongoDB - Vistas del CRUD de productos.
  * Maneja paginacion, busqueda y operaciones CRUD con validacion.
  */
 @Controller
@@ -38,13 +37,13 @@ public class ProductoViewController {
             @RequestParam(required = false) String search,
             Model model) {
 
-        log.info("JPA VIEW: Listando productos - pagina={}, tamanio={}, search={}", page, size, search);
+        log.info("MongoDB VIEW: Listando productos - pagina={}, tamanio={}, search={}", page, size, search);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<ProductoResponse> productosPage;
 
         if (search != null && !search.isBlank()) {
-            log.info("JPA VIEW: Busqueda OR (3 campos) con termino '{}'", search);
+            log.info("MongoDB VIEW: Busqueda OR (3 campos) con termino '{}'", search);
             productosPage = productoService.buscarPor3CamposOr(search, pageable);
         } else {
             productosPage = productoService.listarPaginado(pageable);
@@ -60,9 +59,9 @@ public class ProductoViewController {
 
     @GetMapping("/nuevo")
     public String mostrarFormularioCrear(Model model) {
-        log.info("JPA VIEW: Mostrando formulario de creacion de producto");
+        log.info("MongoDB VIEW: Mostrando formulario de creacion de producto");
         model.addAttribute("productoRequest", new ProductoRequest());
-        model.addAttribute("titulo", "Crear Nuevo Producto");
+        model.addAttribute("titulo", "Crear Nuevo Producto (MongoDB)");
         return "productos/form";
     }
 
@@ -74,20 +73,20 @@ public class ProductoViewController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            log.warn("JPA VIEW: Errores de validacion al guardar producto: {}", bindingResult.getAllErrors());
-            model.addAttribute("titulo", "Crear Nuevo Producto");
+            log.warn("MongoDB VIEW: Errores de validacion al guardar producto: {}", bindingResult.getAllErrors());
+            model.addAttribute("titulo", "Crear Nuevo Producto (MongoDB)");
             return "productos/form";
         }
 
-        log.info("JPA VIEW: Guardando producto - referencia={}", request.getReferencia());
+        log.info("MongoDB VIEW: Guardando producto - referencia={}", request.getReferencia());
         productoService.crearProducto(request);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Producto guardado correctamente");
+        redirectAttributes.addFlashAttribute("mensajeExito", "Producto guardado correctamente en MongoDB");
         return "redirect:/productos";
     }
 
     @GetMapping("/editar/{id}")
-    public String mostrarFormularioEditar(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        log.info("JPA VIEW: Mostrando formulario de edicion para producto ID {}", id);
+    public String mostrarFormularioEditar(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
+        log.info("MongoDB VIEW: Mostrando formulario de edicion para producto ID {}", id);
 
         try {
             ProductoResponse response = productoService.obtenerPorId(id);
@@ -100,10 +99,10 @@ public class ProductoViewController {
 
             model.addAttribute("productoRequest", request);
             model.addAttribute("productoId", id);
-            model.addAttribute("titulo", "Editar Producto #" + id);
+            model.addAttribute("titulo", "Editar Producto MongoDB #" + id);
             return "productos/form";
         } catch (Exception e) {
-            log.error("JPA VIEW: Error al cargar producto ID {} para edicion: {}", id, e.getMessage());
+            log.error("MongoDB VIEW: Error al cargar producto ID {} para edicion: {}", id, e.getMessage());
             redirectAttributes.addFlashAttribute("mensajeError", "Producto no encontrado");
             return "redirect:/productos";
         }
@@ -111,30 +110,30 @@ public class ProductoViewController {
 
     @PostMapping("/actualizar/{id}")
     public String actualizarProducto(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @ModelAttribute("productoRequest") ProductoRequest request,
             BindingResult bindingResult,
             Model model,
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            log.warn("JPA VIEW: Errores de validacion al actualizar producto ID {}: {}", id, bindingResult.getAllErrors());
+            log.warn("MongoDB VIEW: Errores de validacion al actualizar producto ID {}: {}", id, bindingResult.getAllErrors());
             model.addAttribute("productoId", id);
-            model.addAttribute("titulo", "Editar Producto #" + id);
+            model.addAttribute("titulo", "Editar Producto MongoDB #" + id);
             return "productos/form";
         }
 
-        log.info("JPA VIEW: Actualizando producto ID {}", id);
+        log.info("MongoDB VIEW: Actualizando producto ID {}", id);
         productoService.actualizarProducto(id, request);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Producto actualizado correctamente");
+        redirectAttributes.addFlashAttribute("mensajeExito", "Producto actualizado correctamente en MongoDB");
         return "redirect:/productos";
     }
 
     @GetMapping("/eliminar/{id}")
-    public String eliminarProducto(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        log.info("JPA VIEW: Eliminando producto ID {}", id);
+    public String eliminarProducto(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        log.info("MongoDB VIEW: Eliminando producto ID {}", id);
         productoService.eliminarLogico(id);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Producto eliminado correctamente");
+        redirectAttributes.addFlashAttribute("mensajeExito", "Producto eliminado correctamente de MongoDB");
         return "redirect:/productos";
     }
 }

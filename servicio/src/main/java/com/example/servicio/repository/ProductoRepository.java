@@ -4,19 +4,18 @@ import com.example.servicio.entity.Producto;
 import com.example.servicio.entity.Producto.EstadoProducto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 /**
- * Repositorio JPA para la entidad Producto con metodos personalizados.
- * Incluye busquedas por 2 campos (AND) y por 3 campos (OR), mas paginacion.
+ * Repositorio Spring Data MongoDB para el documento Producto.
+ * Incluye metodos personalizados, paginacion y consultas con regex para MongoDB.
  */
 @Repository
-public interface ProductoRepository extends JpaRepository<Producto, Long> {
+public interface ProductoRepository extends MongoRepository<Producto, String> {
 
     Optional<Producto> findByReferencia(String referencia);
 
@@ -25,23 +24,26 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     boolean existsByReferencia(String referencia);
 
     /**
-     * BUSQUEDA POR 2 CAMPOS CON OPERADOR AND.
-     * Busca productos cuyo nombre contenga el termino (case-insensitive) Y tengan un estado especifico.
+     * BUSQUEDA POR 2 CAMPOS CON OPERADOR AND (MongoDB).
+     * Busca productos cuyo nombre coincida (regex case-insensitive) Y tengan un estado especifico.
      */
-    Page<Producto> findByNombreContainingIgnoreCaseAndEstado(
-            String nombre, EstadoProducto estado, Pageable pageable);
+    Page<Producto> findByNombreRegexAndEstado(
+            String regexNombre, EstadoProducto estado, Pageable pageable);
 
     /**
-     * BUSQUEDA POR 3 CAMPOS CON OPERADOR OR (JPQL personalizado).
-     * Busca productos cuyo nombre, descripcion O referencia contengan el termino de busqueda.
+     * BUSQUEDA POR 3 CAMPOS CON OPERADOR OR (MongoDB Query).
+     * Busca productos cuyo nombre, descripcion O referencia coincidan con el termino de busqueda.
      * Excluye productos con estado BORRADO.
      */
-    @Query("SELECT p FROM Producto p WHERE " +
-           "(LOWER(p.nombre) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(p.descripcion) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(p.referencia) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
-           "p.estado <> com.example.servicio.entity.Producto.EstadoProducto$BORRADO")
-    Page<Producto> buscarPor3CamposOr(@Param("query") String query, Pageable pageable);
+    @Query("{ '$and': [ " +
+           "  { '$or': [ " +
+           "    { 'nombre': { '$regex': ?0, '$options': 'i' } }, " +
+           "    { 'descripcion': { '$regex': ?0, '$options': 'i' } }, " +
+           "    { 'referencia': { '$regex': ?0, '$options': 'i' } } " +
+           "  ] }, " +
+           "  { 'estado': { '$ne': 'BORRADO' } } " +
+           "] }")
+    Page<Producto> buscarPor3CamposOr(String regexQuery, Pageable pageable);
 
     /**
      * Paginacion por estado omitiendo productos borrados.

@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion de Productos - Microservicio JPA</title>
+    <title>Gestion de Productos - Microservicio MongoDB</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -15,7 +15,7 @@
 <body>
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestion de Productos (JPA/PostgreSQL)</h2>
+        <h2>Gestion de Productos (MongoDB)</h2>
         <a href="/productos/nuevo" class="btn btn-primary">+ Nuevo Producto</a>
     </div>
 
@@ -59,7 +59,7 @@
                 </thead>
                 <tbody>
                 <tr th:each="prod : ${productosPage.content}">
-                    <td th:text="${prod.id}">1</td>
+                    <td><code th:text="${prod.id}">abc123</code></td>
                     <td><code th:text="${prod.referencia}">REF-001</code></td>
                     <td th:text="${prod.nombre}" class="fw-bold">Producto Demo</td>
                     <td th:text="${'$' + #numbers.formatDecimal(prod.precioBase, 1, 'POINT', 2, 'COMMA')}">$50.000</td>
@@ -74,7 +74,7 @@
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(productosPage.content)}">
-                    <td colspan="7" class="text-center py-4 text-muted">No se encontraron productos en la base de datos.</td>
+                    <td colspan="7" class="text-center py-4 text-muted">No se encontraron productos en MongoDB.</td>
                 </tr>
                 </tbody>
             </table>

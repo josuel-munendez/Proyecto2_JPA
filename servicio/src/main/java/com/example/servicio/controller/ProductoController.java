@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Controlador REST para JPA/PostgreSQL - CRUD y paginacion de Productos.
+ * Controlador REST para MongoDB - CRUD y paginacion de Productos.
  * Retorna codigos de estado HTTP claros (200, 201, 204, 400, 404, 429, 500).
  */
 @RestController
@@ -33,32 +33,32 @@ public class ProductoController {
 
     @PostMapping
     public ResponseEntity<ProductoResponse> crearProducto(@Valid @RequestBody ProductoRequest request) {
-        log.info("JPA REST POST: Crear producto - referencia={}", request.getReferencia());
+        log.info("MongoDB REST POST: Crear producto - referencia={}", request.getReferencia());
         ProductoResponse productoCreado = productoService.crearProducto(request);
-        log.info("JPA REST POST: Producto creado exitosamente - id={}", productoCreado.getId());
+        log.info("MongoDB REST POST: Producto creado exitosamente - id={}", productoCreado.getId());
         return new ResponseEntity<>(productoCreado, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductoResponse> obtenerPorId(@PathVariable Long id) {
-        log.info("JPA REST GET: Obtener producto ID {}", id);
+    public ResponseEntity<ProductoResponse> obtenerPorId(@PathVariable String id) {
+        log.info("MongoDB REST GET: Obtener producto ID {}", id);
         ProductoResponse producto = productoService.obtenerPorId(id);
         return ResponseEntity.ok(producto);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductoResponse> actualizarProducto(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody ProductoRequest request) {
-        log.info("JPA REST PUT: Actualizar producto ID {}", id);
+        log.info("MongoDB REST PUT: Actualizar producto ID {}", id);
         ProductoResponse actualizado = productoService.actualizarProducto(id, request);
-        log.info("JPA REST PUT: Producto ID {} actualizado correctamente", id);
+        log.info("MongoDB REST PUT: Producto ID {} actualizado correctamente", id);
         return ResponseEntity.ok(actualizado);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
-        log.info("JPA REST DELETE: Eliminar producto ID {}", id);
+    public ResponseEntity<Void> eliminarProducto(@PathVariable String id) {
+        log.info("MongoDB REST DELETE: Eliminar producto ID {}", id);
         productoService.eliminarLogico(id);
         return ResponseEntity.noContent().build();
     }
@@ -81,10 +81,10 @@ public class ProductoController {
         Page<ProductoResponse> resultadoPage;
 
         if (nombre != null && !nombre.isBlank() && estado != null) {
-            log.info("JPA REST GET: Busqueda AND - nombre='{}', estado={}", nombre, estado);
+            log.info("MongoDB REST GET: Busqueda AND - nombre='{}', estado={}", nombre, estado);
             resultadoPage = productoService.buscarPorNombreYEstado(nombre, estado, pageable);
         } else if (search != null && !search.isBlank()) {
-            log.info("JPA REST GET: Busqueda OR (3 campos) - search='{}'", search);
+            log.info("MongoDB REST GET: Busqueda OR (3 campos) - search='{}'", search);
             resultadoPage = productoService.buscarPor3CamposOr(search, pageable);
         } else {
             resultadoPage = productoService.listarPaginado(pageable);
