@@ -40,8 +40,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
            "(LOWER(p.nombre) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(p.descripcion) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(p.referencia) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
-           "p.estado <> com.example.servicio.entity.Producto.EstadoProducto$BORRADO")
-    Page<Producto> buscarPor3CamposOr(@Param("query") String query, Pageable pageable);
+           "p.estado <> :excluido")
+    Page<Producto> buscarPor3CamposOr(@Param("query") String query,
+                                      @Param("excluido") EstadoProducto excluido,
+                                      Pageable pageable);
 
     /**
      * Paginacion por estado omitiendo productos borrados.

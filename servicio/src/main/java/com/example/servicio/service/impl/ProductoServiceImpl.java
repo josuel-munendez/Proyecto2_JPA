@@ -122,7 +122,7 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     public Page<ProductoResponse> buscarPor3CamposOr(String query, Pageable pageable) {
         log.info("JPA: Busqueda OR (3 campos) con termino: '{}'", query);
-        return productoRepository.buscarPor3CamposOr(query, pageable)
+        return productoRepository.buscarPor3CamposOr(query, EstadoProducto.BORRADO, pageable)
                 .map(ProductoResponse::fromEntity);
     }
 }
