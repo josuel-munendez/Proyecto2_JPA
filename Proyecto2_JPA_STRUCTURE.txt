@@ -1,0 +1,107 @@
+[01;34m.[0m
+├── Proyecto2_JPA_STRUCTURE.md
+├── Proyecto2_JPA_STRUCTURE.txt
+├── README.md
+└── [01;34mservicio[0m
+    ├── compose.yaml
+    ├── [01;32mmvnw[0m
+    ├── mvnw.cmd
+    ├── pom.xml
+    ├── [01;34msrc[0m
+    │   ├── [01;34mmain[0m
+    │   │   ├── [01;34mjava[0m
+    │   │   │   └── [01;34mcom[0m
+    │   │   │       └── [01;34mexample[0m
+    │   │   │           └── [01;34mservicio[0m
+    │   │   │               ├── [01;34mconfig[0m
+    │   │   │               │   ├── CorsConfig.java
+    │   │   │               │   └── SecurityConfig.java
+    │   │   │               ├── [01;34mcontroller[0m
+    │   │   │               │   ├── ProductoController.java
+    │   │   │               │   └── ProductoViewController.java
+    │   │   │               ├── [01;34mdto[0m
+    │   │   │               │   ├── ProductoPageResponse.java
+    │   │   │               │   ├── ProductoRequest.java
+    │   │   │               │   └── ProductoResponse.java
+    │   │   │               ├── [01;34mentity[0m
+    │   │   │               │   ├── BaseEntity.java
+    │   │   │               │   └── Producto.java
+    │   │   │               ├── [01;34mexception[0m
+    │   │   │               │   ├── BusinessRuleException.java
+    │   │   │               │   ├── GlobalExceptionHandler.java
+    │   │   │               │   └── ResourceNotFoundException.java
+    │   │   │               ├── [01;34mrepository[0m
+    │   │   │               │   └── ProductoRepository.java
+    │   │   │               ├── [01;34msecurity[0m
+    │   │   │               │   ├── RateLimitFilter.java
+    │   │   │               │   ├── RateLimitProperties.java
+    │   │   │               │   └── RateLimitService.java
+    │   │   │               ├── [01;34mservice[0m
+    │   │   │               │   ├── [01;34mimpl[0m
+    │   │   │               │   │   └── ProductoServiceImpl.java
+    │   │   │               │   └── ProductoService.java
+    │   │   │               └── ServicioApplication.java
+    │   │   └── [01;34mresources[0m
+    │   │       ├── application.properties
+    │   │       └── [01;34mtemplates[0m
+    │   │           └── [01;34mproductos[0m
+    │   │               ├── form.html
+    │   │               └── index.html
+    │   └── [01;34mtest[0m
+    │       └── [01;34mjava[0m
+    │           └── [01;34mcom[0m
+    │               └── [01;34mexample[0m
+    │                   └── [01;34mservicio[0m
+    │                       ├── ServicioApplicationTests.java
+    │                       ├── TestcontainersConfiguration.java
+    │                       └── TestServicioApplication.java
+    └── [01;34mtarget[0m
+        ├── [01;34mclasses[0m
+        │   ├── application.properties
+        │   ├── [01;34mcom[0m
+        │   │   └── [01;34mexample[0m
+        │   │       └── [01;34mservicio[0m
+        │   │           ├── [01;34mconfig[0m
+        │   │           │   ├── CorsConfig.class
+        │   │           │   └── SecurityConfig.class
+        │   │           ├── [01;34mcontroller[0m
+        │   │           │   ├── ProductoController.class
+        │   │           │   └── ProductoViewController.class
+        │   │           ├── [01;34mdto[0m
+        │   │           │   ├── ProductoPageResponse.class
+        │   │           │   ├── ProductoRequest.class
+        │   │           │   └── ProductoResponse.class
+        │   │           ├── [01;34mentity[0m
+        │   │           │   ├── BaseEntity.class
+        │   │           │   ├── Producto$EstadoProducto.class
+        │   │           │   └── Producto.class
+        │   │           ├── [01;34mexception[0m
+        │   │           │   ├── BusinessRuleException.class
+        │   │           │   ├── GlobalExceptionHandler.class
+        │   │           │   └── ResourceNotFoundException.class
+        │   │           ├── [01;34mrepository[0m
+        │   │           │   └── ProductoRepository.class
+        │   │           ├── [01;34msecurity[0m
+        │   │           │   ├── RateLimitFilter.class
+        │   │           │   ├── RateLimitProperties.class
+        │   │           │   ├── RateLimitService$RequestCounter.class
+        │   │           │   └── RateLimitService.class
+        │   │           ├── [01;34mservice[0m
+        │   │           │   ├── [01;34mimpl[0m
+        │   │           │   │   └── ProductoServiceImpl.class
+        │   │           │   └── ProductoService.class
+        │   │           └── ServicioApplication.class
+        │   └── [01;34mtemplates[0m
+        │       └── [01;34mproductos[0m
+        │           ├── form.html
+        │           └── index.html
+        ├── [01;34mgenerated-sources[0m
+        │   └── [01;34mannotations[0m
+        └── [01;34mmaven-status[0m
+            └── [01;34mmaven-compiler-plugin[0m
+                └── [01;34mcompile[0m
+                    └── [01;34mdefault-compile[0m
+                        ├── createdFiles.lst
+                        └── inputFiles.lst
+
+47 directories, 58 files
