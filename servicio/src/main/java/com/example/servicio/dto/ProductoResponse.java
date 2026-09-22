@@ -13,6 +13,7 @@ public class ProductoResponse {
     private String referencia;
     private Boolean aprobado;
     private EstadoProducto estado;
+    private Boolean isActive;
     private Integer stock;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -26,6 +27,7 @@ public class ProductoResponse {
         res.setReferencia(producto.getReferencia());
         res.setAprobado(producto.getAprobado());
         res.setEstado(producto.getEstado());
+        res.setIsActive(producto.getIsActive());
         res.setStock(producto.getStock());
         res.setCreatedAt(producto.getCreatedAt());
         res.setUpdatedAt(producto.getUpdatedAt());
@@ -46,6 +48,8 @@ public class ProductoResponse {
     public void setAprobado(Boolean aprobado) { this.aprobado = aprobado; }
     public EstadoProducto getEstado() { return estado; }
     public void setEstado(EstadoProducto estado) { this.estado = estado; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
     public LocalDateTime getCreatedAt() { return createdAt; }

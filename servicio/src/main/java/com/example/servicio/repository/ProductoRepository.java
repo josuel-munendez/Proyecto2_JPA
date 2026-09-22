@@ -12,8 +12,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * Repositorio JPA para la entidad Producto con metodos personalizados.
- * Incluye busquedas por 2 campos (AND) y por 3 campos (OR), mas paginacion.
+ * Repositorio JPA para la entidad Producto.
+ * Mapea la tabla 'products_product' compartida con Django.
  */
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
@@ -25,28 +25,30 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     boolean existsByReferencia(String referencia);
 
     /**
-     * BUSQUEDA POR 2 CAMPOS CON OPERADOR AND.
-     * Busca productos cuyo nombre contenga el termino (case-insensitive) Y tengan un estado especifico.
+     * Busca productos por nombre (case-insensitive) y que estén activos.
      */
-    Page<Producto> findByNombreContainingIgnoreCaseAndEstado(
-            String nombre, EstadoProducto estado, Pageable pageable);
+    Page<Producto> findByNombreContainingIgnoreCaseAndIsActive(
+            String nombre, Boolean isActive, Pageable pageable);
 
     /**
-     * BUSQUEDA POR 3 CAMPOS CON OPERADOR OR (JPQL personalizado).
-     * Busca productos cuyo nombre, descripcion O referencia contengan el termino de busqueda.
-     * Excluye productos con estado BORRADO.
+     * Búsqueda OR en nombre, descripcion y referencia.
+     * Excluye productos borrados (is_active=false AND is_approved=false).
      */
     @Query("SELECT p FROM Producto p WHERE " +
            "(LOWER(p.nombre) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(p.descripcion) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(p.referencia) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
-           "p.estado <> :excluido")
-    Page<Producto> buscarPor3CamposOr(@Param("query") String query,
-                                      @Param("excluido") EstadoProducto excluido,
-                                      Pageable pageable);
+           "NOT (p.isActive = false AND p.aprobado = false)")
+    Page<Producto> buscarPor3CamposOr(@Param("query") String query, Pageable pageable);
 
     /**
-     * Paginacion por estado omitiendo productos borrados.
+     * Lista todos los productos que NO están borrados.
+     * BORRADO = is_active=false AND is_approved=false.
      */
-    Page<Producto> findByEstadoNot(EstadoProducto estado, Pageable pageable);
+    Page<Producto> findByIsActiveTrueOrAprobadoTrue(Pageable pageable);
+
+    /**
+     * Lista solo productos activos (para catálogo público).
+     */
+    Page<Producto> findByIsActiveTrue(Pageable pageable);
 }

@@ -33,7 +33,7 @@ public class ProductoServiceImpl implements ProductoService {
             throw new BusinessRuleException("Ya existe un producto con el nombre: " + request.getNombre());
         }
 
-        if (productoRepository.existsByReferencia(request.getReferencia())) {
+        if (request.getReferencia() != null && productoRepository.existsByReferencia(request.getReferencia())) {
             log.warn("Intento fallido de creacion: La referencia '{}' ya existe", request.getReferencia());
             throw new BusinessRuleException("Ya existe un producto con la referencia: " + request.getReferencia());
         }
@@ -45,7 +45,6 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setReferencia(request.getReferencia());
         producto.setStock(request.getStock() != null ? request.getStock() : 0);
         producto.setEstado(EstadoProducto.ACTIVO);
-        producto.setAprobado(true);
 
         Producto guardado = productoRepository.save(producto);
         log.info("Producto creado exitosamente con JPA - ID: {}", guardado.getId());
@@ -78,6 +77,9 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setNombre(request.getNombre());
         producto.setDescripcion(request.getDescripcion());
         producto.setPrecioBase(request.getPrecioBase());
+        if (request.getReferencia() != null) {
+            producto.setReferencia(request.getReferencia());
+        }
         if (request.getStock() != null) {
             producto.setStock(request.getStock());
         }
@@ -108,21 +110,22 @@ public class ProductoServiceImpl implements ProductoService {
     public Page<ProductoResponse> listarPaginado(Pageable pageable) {
         log.info("JPA: Listando productos paginados - Pagina: {}, Tamanio: {}",
                 pageable.getPageNumber(), pageable.getPageSize());
-        return productoRepository.findByEstadoNot(EstadoProducto.BORRADO, pageable)
+        return productoRepository.findByIsActiveTrueOrAprobadoTrue(pageable)
                 .map(ProductoResponse::fromEntity);
     }
 
     @Override
     public Page<ProductoResponse> buscarPorNombreYEstado(String nombre, EstadoProducto estado, Pageable pageable) {
         log.info("JPA: Busqueda AND (2 campos): nombre='{}', estado={}", nombre, estado);
-        return productoRepository.findByNombreContainingIgnoreCaseAndEstado(nombre, estado, pageable)
+        Boolean isActive = (estado == EstadoProducto.ACTIVO);
+        return productoRepository.findByNombreContainingIgnoreCaseAndIsActive(nombre, isActive, pageable)
                 .map(ProductoResponse::fromEntity);
     }
 
     @Override
     public Page<ProductoResponse> buscarPor3CamposOr(String query, Pageable pageable) {
         log.info("JPA: Busqueda OR (3 campos) con termino: '{}'", query);
-        return productoRepository.buscarPor3CamposOr(query, EstadoProducto.BORRADO, pageable)
+        return productoRepository.buscarPor3CamposOr(query, pageable)
                 .map(ProductoResponse::fromEntity);
     }
 }
