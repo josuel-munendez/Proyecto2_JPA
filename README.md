@@ -170,6 +170,34 @@ cd servicio
 
 ---
 
+## 🔗 Integración con Frontend React
+
+El microservicio se comunica con el frontend React del proyecto `projecto_formativo` mediante un **patrón Adaptador**:
+
+```text
+Frontend React (:5173)
+    │
+    ├── /api/v1/*  ──► Spring Boot (:8082 PostgreSQL / :8083 MongoDB)
+    │   CRUD productos: crear, listar, editar, eliminar
+    │
+    └── /api/*     ──► Django (:8000)
+        Imágenes, variantes, categorías, carrito, órdenes, auth, catálogo
+```
+
+**Archivos clave en el frontend:**
+- `services/microservice.js` — Cliente Axios con JWT interceptor para `/api/v1`
+- `services/productService.js` — Adaptador que traduce respuestas Spring Boot (`content/totalElements`) al formato DRF (`results/count`) que los componentes React esperan
+- `components/ProductForm.jsx` — Formulario de creación/edición con validaciones client-side que reflejan las reglas de Jakarta Validation del backend
+- `components/ProductList.jsx` — Lista con botón de soft-delete que llama a `DELETE /api/v1/productos/{id}`
+
+**Ramas Git espejo:**
+| Proyecto2_JPA | projecto_formativo | Base de datos | Puerto |
+|---------------|-------------------|---------------|--------|
+| `main` | `java/microservicio` | PostgreSQL | 8082 |
+| `java/mongoDB` | `java/mongoDB` | MongoDB | 8083 |
+
+---
+
 ## 🎓 Puntos Clave para la Sustentación
 
 1. **¿Por qué Arquitectura Orientada al Dominio (ODD/DDD)?**
