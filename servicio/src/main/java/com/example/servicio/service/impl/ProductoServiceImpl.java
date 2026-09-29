@@ -520,6 +520,11 @@ public class ProductoServiceImpl implements ProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "La imagen " + imagenId + " no pertenece al producto " + id));
         productoImagenRepository.delete(imagen);
+        // El archivo está en Cloudinary y el documento en MongoDB: hay que
+        // limpiar los dos o el archivo queda huérfano y pagado. Va después del
+        // delete para que un fallo de Django no deje la imagen "viva" en la
+        // galería del producto.
+        interServiceClient.eliminarArchivoEnDjango(imagen.getImage());
         log.info("Imagen {} eliminada del producto {}", imagenId, id);
     }
 

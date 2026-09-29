@@ -1,6 +1,7 @@
 package com.example.servicio.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -137,4 +138,57 @@ class InterServiceClientCategoriasTest {
                 .hasMessageContaining(REF);
         server.verify();
     }
+    // El public_id va como query param: lleva barras y en la ruta se
+    // codificarían como %2F, que no todos los proxies respetan.
+    private static final String URL_ARCHIVO =
+            "http://django.test/api/internal/products/archivos/?path=products%2F2026%2F09%2Fabc123";
+
+    @Test
+    @DisplayName("borrar el archivo avisa a Django con DELETE y el public_id en la query")
+    void borraElArchivoEnDjango() {
+        server.expect(requestTo(URL_ARCHIVO))
+                .andExpect(method(HttpMethod.DELETE))
+                .andExpect(header("X-Internal-Token", TOKEN))
+                .andRespond(withSuccess());
+
+        cliente.eliminarArchivoEnDjango("products/2026/09/abc123");
+
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("no llama a Django si el public_id viene vacío")
+    void noIntentaBorrarSiElPublicIdVieneVacio() {
+        cliente.eliminarArchivoEnDjango(null);
+        cliente.eliminarArchivoEnDjango("   ");
+
+        // Sin expect() no hay peticiones: si se enviara alguna, verify() fallaría.
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("un fallo de Django no propaga: el documento ya se borró de Mongo")
+    void unFalloDeDjangoNoRompeLaEliminacion() {
+        // El documento de la imagen se borra de MongoDB antes de avisar a
+        // Django. Si esta llamada fallara hacia arriba, el usuario veria un
+        // error por un archivo que ya no le afecta a su producto, cuando en
+        // realidad lo que quiero es que la eliminacion termine.
+        server.expect(requestTo(URL_ARCHIVO)).andRespond(withServerError());
+
+        assertThatNoException()
+                .isThrownBy(() -> cliente.eliminarArchivoEnDjango("products/2026/09/abc123"));
+    }
+
+    @Test
+    @DisplayName("un fallo de Django deja el archivo huérfano y se avisa por log")
+    void unFalloDeDjangoQuedaRegistrado() {
+        server.expect(requestTo(URL_ARCHIVO)).andRespond(withServerError());
+
+        cliente.eliminarArchivoEnDjango("products/2026/09/abc123");
+
+        // El warning tiene que decir que queda basura en Cloudinary, para que
+        // se pueda limpiar en una pasada posterior.
+        server.verify();
+    }
+
 }

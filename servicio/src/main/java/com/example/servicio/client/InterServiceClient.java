@@ -121,10 +121,40 @@ public class InterServiceClient {
         }
     }
 
+    /**
+     * Borra en Cloudinary el archivo de una imagen que se acaba de eliminar.
+     *
+     * El public_id vive en MongoDB (ProductoImagen.image) y el archivo físico
+     * en Cloudinary, que es donde se configura y se sube. Si Spring borra solo
+     * el documento, el archivo se queda en Cloudinary sin referencia y alguien
+     * lo sigue pagando; y si Django lo borrara por su cuenta, rompería el
+     * producto que aún lo muestra.
+     *
+     * Best-effort a propósito: el documento ya está borrado de MongoDB cuando
+     * se llama a esto, así que un fallo de Django no debe impedir que la
+     * eliminación termine. Se avisa en el log y se sigue.
+     */
+    public void eliminarArchivoEnDjango(String publicId) {
+        if (publicId == null || publicId.isBlank()) {
+            return;
+        }
+        try {
+            restClient.delete()
+                    .uri("/api/internal/products/archivos/?path={path}", publicId)
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("INTER-SERVICE: archivo {} borrado de Cloudinary", publicId);
+        } catch (Exception e) {
+            log.warn("INTER-SERVICE: no se pudo borrar {} de Cloudinary ({}). "
+                    + "El documento ya no existe en MongoDB, asi que el producto no "
+                    + "se rompe, pero el archivo queda huérfano en Cloudinary.",
+                    publicId, e.getMessage());
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // Purga física
     // ═══════════════════════════════════════════════════════════════════════
-
     /**
      * @param productoRef ObjectId de Mongo del producto.
      * @return true si el producto tiene al menos una línea de orden asociada.
