@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.springframework.data.annotation.Version;
 
 /**
  * Entidad que mapea la tabla 'products_product' de Django.
@@ -22,7 +23,36 @@ import jakarta.validation.constraints.Size;
  *   id, name, description, base_price, referencia, stock,
  *   is_active, is_approved, created_at, updated_at
  *
+ * 5 validaciones Jakarta declaradas directamente en la entidad:
+ *   1. @NotBlank en nombre          2. @Size(3,100) en nombre
+ *   3. @Pattern sin caracteres de control en nombre
+ *   4. @NotNull + @DecimalMin(50) en precioBase
+ *   5. @Pattern alfanumerico en referencia
+ *
+ * Las cuatro primeras viven en el grupo Default: Hibernate las aplica solo en
+ * cada INSERT y UPDATE, y los 36 productos reales de la BD las cumplen.
+ * La quinta (referencia) esta en el grupo ProductoGrupos.AlCrear porque 34
+ * filas heredadas de Django la tienen vacia; validarla en cada escritura
+ * rompia el borrado logico con un 500. Ver ProductoGrupos.
+ *
+ * El DTO ProductoRequest repite estas reglas para validar la ENTRADA y dar
+ * mensajes campo a campo antes de tocar la BD. No es duplicacion inutil: el
+ * DTO protege el borde HTTP, la entidad protege el invariante del dominio.
+ *
  * Soft delete (BORRADO): se representa como is_active=false + is_approved=false.
+ *
+ * CONCURRENCIA (@Version): la columna 'version' la administra Django como
+ * dueño del esquema (migración products.0010_add_version_column), pero ambos
+ * backends la incrementan en cada escritura: Hibernate con @Version y Django
+ * con F('version') + 1 en Product.save(). Eso es lo que hace que el bloqueo
+ * optimista sirva de algo sobre una tabla compartida: si dos admins editan el
+ * mismo producto a la vez —uno desde Spring, otro desde Django— el segundo
+ * UPDATE ... WHERE version = N no casa filas y Spring responde 409 en vez de
+ * pisar el trabajo del primero.
+ *
+ * Si Django dejara la versión quieta, el bloqueo se rompería en silencio: Spring
+ * escribiría con WHERE version = N sobre una fila que Django ya había cambiado
+ * sin tocar la versión, y los dos updates tendrían éxito.
  */
 @Entity
 @Table(name = "products_product")
@@ -37,6 +67,16 @@ public class Producto extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * Versionado optimista. Hibernate la incrementa sola en cada UPDATE y la
+     * usa en el WHERE; si la fila cambió por debajo (por otra instancia de
+     * Spring o por un save() de Django) el UPDATE no casa y se lanza
+     * OptimisticLockingFailureException -> 409.
+     */
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
 
     @NotBlank(message = "El nombre del producto es obligatorio")
     @Size(min = 3, max = 100, message = "El nombre debe tener entre 3 y 100 caracteres")
@@ -53,7 +93,7 @@ public class Producto extends BaseEntity {
     @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioBase;
 
-    @Pattern(regexp = "^[A-Z0-9\\-]{3,20}$", message = "La referencia debe ser alfanumerica (3-20 caracteres, mayusculas, numeros o guiones)")
+    @Pattern(regexp = "^[A-Z0-9\\-]{3,20}$", message = "La referencia debe ser alfanumerica (3-20 caracteres, mayusculas, numeros o guiones)", groups = ProductoGrupos.AlCrear.class)
     @Column(name = "referencia", length = 20)
     private String referencia;
 
@@ -87,6 +127,9 @@ public class Producto extends BaseEntity {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
