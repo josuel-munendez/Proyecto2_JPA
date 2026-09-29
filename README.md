@@ -85,19 +85,43 @@ sequenceDiagram
 ## 🚀 Requisitos y Características Implementadas
 
 ### 1. 🔍 Búsquedas Avanzadas (AND / OR)
-- **Búsqueda por 2 campos con operador AND**:
-  - *JPA/PostgreSQL*: `findByNombreContainingIgnoreCaseAndEstado`
-  - *MongoDB*: `findByNombreRegexAndEstado` (expresión regular case-insensitive + estado)
-- **Búsqueda por 3 campos con operador OR**:
-  - *JPA/PostgreSQL*: Consulta JPQL sobre `nombre`, `descripcion` y `referencia`, filtrando registros no borrados.
-  - *MongoDB*: Consulta `@Query` con operadores `$or` y `$regex` sobre `nombre`, `descripcion` y `referencia`.
+Ambas están expuestas como endpoints propios, con paginación incluida:
+
+| Operador | Endpoint | Consulta |
+| :--- | :--- | :--- |
+| **Y** (2 campos) | `GET /api/v1/productos/buscar/and?nombre=X&estado=Y` | `findByNombreContainingIgnoreCaseAndIsActive` — el `And` **del nombre del método es el operador Y**. Spring Data la deriva, no se escribe a mano. |
+| **O** (3 campos) | `GET /api/v1/productos/buscar/or?query=X` | JPQL con `nombre LIKE %X%` **O** `descripcion LIKE %X%` **O** `referencia LIKE %X%`, excluyendo los borrados lógicamente. |
+
+Comprobación de que la conjunción filtra de verdad: `buscar/and?nombre=camiseta&estado=ACTIVO` → 2 resultados; el mismo `nombre` con `estado=INACTIVO` → 0.
+
+Ambas resisted SQL Injection porque el término viaja como parámetro vinculado (`:query`), nunca interpolado en la cadena JPQL.
+
+- *JPA/PostgreSQL*: método derivado + JPQL con `@Query`.
+- *MongoDB*: `findByNombreRegexAndEstado` (regex case-insensitive + estado) y la API de `Criteria` con `orOperator` en `ProductoRepositoryImpl`, donde el término se escapa antes de convertirse en regex.
 
 ### 2. 🛡️ Validaciones con Anotaciones en la Entidad (5 Validaciones)
-1. `@NotBlank(message = "El nombre del producto es obligatorio")`: Control de campos no vacíos.
-2. `@Size(min = 3, max = 100)`: Restricción de longitud del nombre (y `@Size(max = 500)` en descripción).
-3. `@Pattern(regexp = "^[^\\p{Cntrl}]*$")`: Sanitización contra caracteres de control e inyecciones.
-4. `@NotNull` + `@DecimalMin(value = "50.0")`: Validación de precio base mínimo en COP (múltiplo de 50).
-5. `@Pattern(regexp = "^[A-Z0-9\\-]{3,20}$")`: Formato alfanumérico estricto para la referencia única del producto.
+Las cinco están **en la entidad** `Producto.java`, no solo en el DTO:
+
+1. `@NotBlank(message = "El nombre del producto es obligatorio")`
+2. `@Size(min = 3, max = 100)` en nombre y `@Size(max = 500)` en descripción
+3. `@Pattern(regexp = "^[^\\p{Cntrl}]*$")` — bloquea caracteres de control e inyección
+4. `@NotNull` + `@DecimalMin(value = "50.0")` en precioBase
+5. `@Pattern(regexp = "^[A-Z0-9\\-]{3,20}$")` en referencia
+
+> **Por qué unas van en el grupo `Default` y otra en `AlCrear`.**
+> La tabla `products_product` la comparten Spring y Django, y 34 de las 36 filas
+> son anteriores a la migración que agrego `referencia`: la tienen como cadena
+> vacía `''`. Con las cinco anotaciones sin grupos, Hibernate valida en cada
+> UPDATE y el borrado lógico de esos productos reventaba con
+> `ConstraintViolationException` → **500 en vez de 204** (comprobado). Por eso
+> las 4 primeras van en `Default` —que Hibernate aplica solo en cada escritura,
+> y los datos reales las cumplen— y la de `referencia` va en
+> `ProductoGrupos.AlCrear`, que `ProductoServiceImpl.crearProducto` pide
+> explícitamente al crear. Ver `ProductoGrupos.java`.
+
+El DTO `ProductoRequest` repite estas reglas para validar la **entrada** y dar
+mensajes campo a campo antes de tocar la BD. No es duplicación inútil: el DTO
+protege el borde HTTP, la entidad protege el invariante del dominio.
 
 ### 3. 🚨 Manejo Centralizado de Excepciones y Códigos HTTP
 Implementado con `GlobalExceptionHandler` (`@RestControllerAdvice`), retornando payloads JSON consistentes con códigos de estado HTTP precisos:
@@ -158,10 +182,15 @@ cd servicio
 | Método | Endpoint | Descripción | Parámetros Query |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/productos` | Listar productos paginados | `page`, `size`, `sortBy`, `sortDir`, `nombre`, `estado`, `search` |
+| `GET` | `/api/v1/productos/buscar/and` | **Reto 1:** 2 campos con operador **Y** | `nombre`, `estado`, `page`, `size` |
+| `GET` | `/api/v1/productos/buscar/or` | **Reto 1:** 3 campos con operador **O** | `query`, `page`, `size` |
 | `GET` | `/api/v1/productos/{id}` | Obtener producto por ID | - |
 | `POST` | `/api/v1/productos` | Crear nuevo producto | - (Body JSON) |
 | `PUT` | `/api/v1/productos/{id}` | Actualizar producto | - (Body JSON) |
-| `DELETE` | `/api/v1/productos/{id}` | Eliminación lógica de producto | - |
+| `PATCH` | `/api/v1/productos/{id}` | Actualización parcial (paridad Django) | - (Body JSON) |
+| `DELETE` | `/api/v1/productos/{id}` | Eliminación **lógica** (soft delete) → 204 | - |
+| `DELETE` | `/api/v1/productos/{id}/purgar` | Eliminación **física** (hard delete) → 204 | - |
+| `GET` | `/api/v1/productos/internal/django-status` | Diagnóstico de comunicación con Django | - |
 
 ### Vistas Web (Thymeleaf)
 - **Listado y Búsqueda**: `http://localhost:8082/productos` (o `8083` en MongoDB)
