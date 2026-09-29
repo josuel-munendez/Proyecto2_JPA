@@ -19,3 +19,9 @@ buildNumber.properties
 .~lock.*
 # Logs rotados del servicio (logback)
 servicio/logs/
+
+# Secretos: .env lleva usuario/contrasena de Atlas y el token interno.
+# .env.example sí se versiona, es la plantilla sin valores.
+.env
+.env.*
+!**/.env.example
