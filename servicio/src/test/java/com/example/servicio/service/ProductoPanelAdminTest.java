@@ -228,6 +228,22 @@ class ProductoPanelAdminTest {
     }
 
     @Test
+    @DisplayName("no se aceptan más de 5 imágenes, aunque se llame a la API")
+    void hayUnTopeDeImagenes() {
+        var creado = productoService.crearProducto(requestValido());
+        for (int i = 0; i < 5; i++) {
+            productoService.agregarImagen(creado.getId(), "https://cdn.example.com/" + i + ".png", false);
+        }
+
+        assertThatThrownBy(() -> productoService.agregarImagen(
+                creado.getId(), "https://cdn.example.com/6.png", false))
+                .as("la regla ya existía en Django; sin esto solo la cumpliría el formulario")
+                .isInstanceOf(com.example.servicio.exception.BusinessRuleException.class)
+                .hasMessageContaining("5");
+        assertThat(imagenRepository.findByProductoIdOrderByCreatedAtAsc(creado.getId())).hasSize(5);
+    }
+
+    @Test
     @DisplayName("quitar una imagen exige que pertenezca al producto")
     void noSePuedeQuitarUnaImagenDeOtroProducto() {
         var primero = productoService.crearProducto(requestValido());

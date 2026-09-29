@@ -62,6 +62,9 @@ public class ProductoServiceImpl implements ProductoService {
     private final ProductoImagenRepository productoImagenRepository;
     private final VarianteRepository varianteRepository;
     private final ProductoAuditoriaRepository auditoriaRepository;
+    /** Tope de imágenes por producto, igual que el que tenía Django. */
+    private static final int MAX_IMAGENES_POR_PRODUCTO = 5;
+
     private final InterServiceClient interServiceClient;
 
     public ProductoServiceImpl(ProductoRepository productoRepository,
@@ -477,6 +480,15 @@ public class ProductoServiceImpl implements ProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
         if (image == null || image.isBlank()) {
             throw new BusinessRuleException("La URL de la imagen es obligatoria");
+        }
+
+        // Máximo 5 imágenes por producto. La regla ya existía, pero vivía en el
+        // clean() del modelo de Django; con los documentos en MongoDB ese clean()
+        // no se ejecuta, así que sin esta comprobación el tope solo existiría en
+        // el formulario y se podría saltar llamando a la API.
+        if (productoImagenRepository.countByProductoId(id) >= MAX_IMAGENES_POR_PRODUCTO) {
+            throw new BusinessRuleException(
+                    "Máximo " + MAX_IMAGENES_POR_PRODUCTO + " imágenes por producto");
         }
 
         // Una sola imagen principal por producto: si la nueva lo es, se
