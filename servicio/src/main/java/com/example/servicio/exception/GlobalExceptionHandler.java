@@ -2,8 +2,10 @@ package com.example.servicio.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -55,6 +57,35 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleBusinessRule(BusinessRuleException ex) {
         log.warn("Excepcion 400 Regla de Negocio: {}", ex.getMessage());
         return crearRespuestaError(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+    }
+
+    /**
+     * Maneja el conflicto de bloqueo optimista.
+     *
+     * Se cubren DOS casos porque llegan por caminhos distintos:
+     *  - VersionConflictException: el chequeo explícito de `version` en
+     *    ProductoServiceImpl, es decir el cliente.editó una fila desactualizada.
+     *  - OptimisticLockingFailureException: Hibernate perdió la carrera entre
+     *    dos escrituras concurrentes de Spring sobre la misma fila.
+     *
+     * @return HTTP 409 CONFLICT con la versión que el cliente debería recargar.
+     */
+    @ExceptionHandler({
+            VersionConflictException.class,
+            ObjectOptimisticLockingFailureException.class,
+            OptimisticLockingFailureException.class,
+            jakarta.persistence.OptimisticLockException.class
+    })
+    public ResponseEntity<Map<String, Object>> handleVersionConflict(Exception ex) {
+        log.warn("Excepcion 409 Conflicto de version (optimistic locking): {}", ex.getMessage());
+        Map<String, Object> detalles = new HashMap<>();
+        if (ex instanceof VersionConflictException vce) {
+            detalles.put("versionEsperada", vce.getVersionEsperada());
+            detalles.put("versionActual", vce.getVersionActual());
+        }
+        return crearRespuestaError(HttpStatus.CONFLICT,
+                "El producto fue modificado por otro usuario. Recargue para ver los cambios mas recientes.",
+                detalles);
     }
 
     /**

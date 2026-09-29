@@ -1,5 +1,6 @@
 package com.example.servicio.dto;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -45,6 +46,7 @@ public class ProductoRequest {
      */
     @NotNull(message = "El precio base es obligatorio")
     @DecimalMin(value = "50.0", message = "El precio minimo es 50.0 COP")
+    @DecimalMax(value = "99999999.99", message = "El precio no puede superar $99.999.999,99 COP")
     private BigDecimal precioBase;
 
     /**
@@ -60,6 +62,17 @@ public class ProductoRequest {
      * Por defecto se inicializa en 0 si no es provisto.
      */
     private Integer stock = 0;
+
+    /**
+     * Versión del producto que el cliente cree tener (bloqueo optimista).
+     *
+     * Opcional a propósito: si no viene (POST, o clientes legacy), la
+     * actualización se aplica sin comprobar nada. Si viene y no coincide con
+     * la de la fila, significa que otro usuario (o Django) la modificó
+     * mientras este formulario estaba abierto y se responde 409 en vez de
+     * pisar su trabajo.
+     */
+    private Long version;
 
     // ========================================================================
     // GETTERS Y SETTERS
@@ -79,4 +92,7 @@ public class ProductoRequest {
 
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 }
