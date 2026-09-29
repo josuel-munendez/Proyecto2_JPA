@@ -21,6 +21,10 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import com.example.servicio.dto.ProductoImagenDTO;
+import com.example.servicio.dto.VarianteDTO;
+import com.example.servicio.entity.ProductoAuditoria;
+import java.util.List;
 
 /**
  * Controlador REST para MongoDB - CRUD y paginacion de Productos.
@@ -93,6 +97,92 @@ public class ProductoController {
     public ResponseEntity<Void> purgarProducto(@PathVariable String id) {
         log.info("MongoDB REST DELETE: Purga fisica del producto ID {}", id);
         productoService.purgarProducto(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Panel de administración
+    //
+    // El panel antes hablaba con Django para todo esto. Con el producto en
+    // MongoDB, Django no puede resolver un ObjectId, así que estas rutas
+    // viven en Spring. Mantener el mismo nombre conceptual de operación evita
+    // rehacer la lógica de negocio de la UI.
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /** GET /{id}/auditorias — historial del producto, del más nuevo al más viejo. */
+    @GetMapping("/{id}/auditorias")
+    public ResponseEntity<List<ProductoAuditoria>> listarAuditorias(@PathVariable String id) {
+        return ResponseEntity.ok(productoService.listarAuditorias(id));
+    }
+
+    /** POST /{id}/desaprobar — body: {"motivo": "..."} */
+    @PostMapping("/{id}/desaprobar")
+    public ResponseEntity<ProductoResponse> desaprobar(
+            @PathVariable String id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String motivo = body == null ? null : body.get("motivo");
+        return ResponseEntity.ok(productoService.desaprobar(id, motivo));
+    }
+
+    /** PATCH /{id}/activo — alterna el estado activo y devuelve el resultado. */
+    @PatchMapping("/{id}/activo")
+    public ResponseEntity<ProductoResponse> cambiarActivo(@PathVariable String id) {
+        return ResponseEntity.ok(productoService.cambiarActivo(id));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Imágenes
+    // ─────────────────────────────────────────────────────────────────────
+
+    @PostMapping("/{id}/imagenes")
+    public ResponseEntity<ProductoImagenDTO> agregarImagen(
+            @PathVariable String id,
+            @RequestBody Map<String, Object> body) {
+        String image = (String) body.get("image");
+        // ausente o null = no principal. Solo se marca principal si el cliente
+        // lo pide explícitamente, para no desplazar la portada sin querer.
+        boolean esPrincipal = Boolean.TRUE.equals(body.get("esPrincipal"));
+        ProductoImagenDTO dto = productoService.agregarImagen(id, image, esPrincipal);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    /** Marca una imagen existente como portada del producto. */
+    @PatchMapping("/{id}/imagenes/{imagenId}")
+    public ResponseEntity<ProductoImagenDTO> marcarImagenPrincipal(
+            @PathVariable String id, @PathVariable String imagenId) {
+        return ResponseEntity.ok(productoService.marcarImagenPrincipal(id, imagenId));
+    }
+
+    @DeleteMapping("/{id}/imagenes/{imagenId}")
+    public ResponseEntity<Void> eliminarImagen(
+            @PathVariable String id, @PathVariable String imagenId) {
+        productoService.eliminarImagen(id, imagenId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Variantes
+    // ─────────────────────────────────────────────────────────────────────
+
+    /** POST crea; PUT actualiza. El id va en la ruta, no en el body. */
+    @PostMapping("/{id}/variantes")
+    public ResponseEntity<VarianteDTO> crearVariante(
+            @PathVariable String id, @RequestBody VarianteDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(productoService.guardarVariante(id, request, null));
+    }
+
+    @PutMapping("/{id}/variantes/{varianteId}")
+    public ResponseEntity<VarianteDTO> actualizarVariante(
+            @PathVariable String id, @PathVariable String varianteId,
+            @RequestBody VarianteDTO request) {
+        return ResponseEntity.ok(productoService.guardarVariante(id, request, varianteId));
+    }
+
+    @DeleteMapping("/{id}/variantes/{varianteId}")
+    public ResponseEntity<Void> eliminarVariante(
+            @PathVariable String id, @PathVariable String varianteId) {
+        productoService.eliminarVariante(id, varianteId);
         return ResponseEntity.noContent().build();
     }
 

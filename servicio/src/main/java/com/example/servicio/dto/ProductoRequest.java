@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * ============================================================================
@@ -74,9 +75,33 @@ public class ProductoRequest {
      */
     private Long version;
 
+    /**
+     * Ids de las categorías del producto, del catálogo de Django.
+     *
+     * Es el conjunto COMPLETO de las marcadas en el formulario, no un delta:
+     * las que no vienen aquí quedan desasignadas. Así el cliente no tiene que
+     * calcular la diferencia, y un reintento con el mismo conjunto no duplica
+     * nada.
+     *
+     * Opcional y con valor por defecto null (no lista vacía) a propósito, para
+     * poder distinguir los dos casos:
+     *   null -> "no me digas nada de categorías": el guardado del producto sigue
+     *           adelante aunque Django esté caído, y no se toca la asignación.
+     *   []   -> "quítamelas todas".
+     * Si fuera una lista vacía por defecto, cualquier cliente que no envíe el
+     * campo (incluidos los que no saben nada de categorías) borraría todas las
+     * categorías del producto al guardar.
+     *
+     * Los ids son enteros porque las categorías siguen viviendo en Django.
+     */
+    private List<Long> categoriaIds = null;
+
     // ========================================================================
     // GETTERS Y SETTERS
     // ========================================================================
+
+    public List<Long> getCategoriaIds() { return categoriaIds; }
+    public void setCategoriaIds(List<Long> categoriaIds) { this.categoriaIds = categoriaIds; }
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }

@@ -3,6 +3,8 @@ package com.example.servicio.client;
 import java.util.List;
 import java.util.Map;
 
+import com.example.servicio.client.dto.CategoriaDTO;
+import com.example.servicio.client.dto.CategoriasResponse;
 import com.example.servicio.exception.InterServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +59,66 @@ public class InterServiceClient {
 
     public InterServiceClient(RestClient djangoRestClient) {
         this.restClient = djangoRestClient;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Categorías
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Categorías asignadas al producto, que viven en el PostgreSQL de Django.
+     *
+     * Las categorías no se movieron a MongoDB porque son pocas, compartidas
+     * entre productos y las consume el resto de la aplicación Django. La
+     * relación se guarda en catalog_productcategory apuntando por
+     * product_ref, así que la consulta se hace por ObjectId.
+     *
+     * Degradación: si Django no responde se devuelve una lista vacía en lugar de
+     * propagar el fallo. Perder las categorías en la pantalla es preferible a
+     * que el detalle completo del producto dé error, y el usuario no está
+     * borrando nada: solo leyendo.
+     */
+    public List<CategoriaDTO> obtenerCategorias(String productoRef) {
+        try {
+            CategoriasResponse body = restClient.get()
+                    .uri("/api/internal/products/categories/{ref}/", productoRef)
+                    .retrieve()
+                    .body(CategoriasResponse.class);
+            if (body == null || body.getCategories() == null) {
+                return List.of();
+            }
+            return body.getCategories();
+        } catch (Exception e) {
+            log.warn("INTER-SERVICE: no se pudieron leer las categorías del producto {} ({}). "
+                    + "Se devuelven vacías.", productoRef, e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Reemplaza el conjunto de categorías del producto.
+     *
+     * @throws InterServiceException si Django no confirma el cambio. Aquí, a
+     *         diferencia de la lectura, SÍ se propaga el fallo: si el usuario
+     *         desmarca una categoría y el guardado dice que fue bien pero no lo
+     *         fue, pierde el cambio sin enterarse.
+     */
+    public void reemplazarCategorias(String productoRef, List<Long> categoriaIds) {
+        Map<String, Object> payload = Map.of(
+                "categoria_ids", categoriaIds == null ? List.of() : categoriaIds);
+        try {
+            CategoriasResponse body = restClient.put()
+                    .uri("/api/internal/products/categories/{ref}/set/", productoRef)
+                    .body(payload)
+                    .retrieve()
+                    .body(CategoriasResponse.class);
+            log.info("INTER-SERVICE: categorías del producto {} actualizadas: {}",
+                    productoRef, body == null ? "sin respuesta" : body.getCategories());
+        } catch (Exception e) {
+            throw new InterServiceException(
+                    "No se pudieron guardar las categorías del producto " + productoRef
+                    + " en Django: " + e.getMessage(), e);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════

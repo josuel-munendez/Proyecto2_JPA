@@ -1,5 +1,6 @@
 package com.example.servicio.dto;
 
+import com.example.servicio.client.dto.CategoriaDTO;
 import com.example.servicio.entity.Producto;
 import com.example.servicio.entity.Producto.EstadoProducto;
 import java.math.BigDecimal;
@@ -46,6 +47,23 @@ public class ProductoResponse {
      */
     private List<ProductoImagenDTO> imagenes = new ArrayList<>();
     private List<VarianteDTO> variantes = new ArrayList<>();
+
+    /**
+     * Categorías asignadas, servidas desde Django porque el catálogo de
+     * categorías vive en su PostgreSQL.
+     *
+     * Solo en el detalle, por la misma razón que imagenes y variantes: en un
+     * listado, una llamada a Django por producto sería latencia extra por cada
+     * fila sin que la vista use el dato.
+     *
+     * Si Django no está disponible se devuelve vacía. Es deliberado: el
+     * usuario está leyendo, y es preferible mostrar el producto sin categorías
+     * que impedir abrir el detalle entero.
+     */
+    private List<CategoriaDTO> categorias = new ArrayList<>();
+
+    public List<CategoriaDTO> getCategorias() { return categorias; }
+    public void setCategorias(List<CategoriaDTO> categorias) { this.categorias = categorias; }
 
     public List<ProductoImagenDTO> getImagenes() { return imagenes; }
     public void setImagenes(List<ProductoImagenDTO> imagenes) { this.imagenes = imagenes; }

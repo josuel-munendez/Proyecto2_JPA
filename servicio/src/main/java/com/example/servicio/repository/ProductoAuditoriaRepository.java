@@ -23,6 +23,12 @@ public interface ProductoAuditoriaRepository extends MongoRepository<ProductoAud
     List<ProductoAuditoria> findByProductoId(String productoId);
 
     /**
+     * Historial en orden cronológico inverso, que es como se muestra en el
+     * panel de detalle: lo que acaba de pasar arriba.
+     */
+    List<ProductoAuditoria> findByProductoIdOrderByCreatedAtDesc(String productoId);
+
+    /**
      * Acciones de historial de un producto, limitadas a las que lo hacen
      * elegible para purga (published / disapproved / deleted).
      */

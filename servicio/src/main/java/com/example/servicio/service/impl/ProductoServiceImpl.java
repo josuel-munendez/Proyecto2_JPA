@@ -1,6 +1,7 @@
 package com.example.servicio.service.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -245,7 +246,29 @@ public class ProductoServiceImpl implements ProductoService {
         log.info("Producto creado exitosamente en MongoDB con ID: {}", guardado.getId());
         ProductoResponse res = ProductoResponse.fromEntity(guardado);
         enriquecer(List.of(res));
+        sincronizarCategorias(guardado.getId(), request.getCategoriaIds());
         return res;
+    }
+
+    /**
+     * Replica en Django el conjunto de categorías del producto.
+     *
+     * Solo actúa si el cliente envió el campo. Con null se deja la asignación
+     * como esté: el motivo es que las categorías viven en el PostgreSQL de
+     * Django y, si Django está caído, bloquear el guardado del producto entero
+     * (que sí está en MongoDB y sí se pudo escribir) sería castigar al usuario
+     * por una dependencia que no es suya. Con lista vacía se quitan todas,
+     * porque entonces el cliente sí está diciendo "quítamelas".
+     *
+     * Si Django falla con lista no nula sí se propaga el error: el usuario
+     * desmarcó algo explícitamente y se le debe decir que no se guardó, en
+     * lugar de confirmar un guardado a medias.
+     */
+    private void sincronizarCategorias(String productoId, List<Long> categoriaIds) {
+        if (categoriaIds == null) {
+            return;
+        }
+        interServiceClient.reemplazarCategorias(productoId, categoriaIds);
     }
 
     @Override
@@ -255,6 +278,7 @@ public class ProductoServiceImpl implements ProductoService {
         ProductoResponse res = toResponse(producto, indexarImagenesPrincipales(List.of(id)));
         enriquecer(List.of(res));
         adjuntarSubrecursos(res, producto);
+        res.setCategorias(interServiceClient.obtenerCategorias(id));
         return res;
     }
 
@@ -343,17 +367,22 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setVersion(producto.getVersion() == null ? 1L : producto.getVersion() + 1);
         producto.onUpdate();
 
-        Producto actualizado = productoRepository.save(producto);
-        registrarAuditoria(actualizado.getId(), ProductoAuditoria.ACTION_UPDATED,
-                before, snapshot(actualizado), "");
+          Producto actualizado = productoRepository.save(producto);
+          registrarAuditoria(actualizado.getId(), ProductoAuditoria.ACTION_UPDATED,
+                  before, snapshot(actualizado), "");
 
-        log.info("Producto ID: {} actualizado correctamente en MongoDB (version {})",
-                id, actualizado.getVersion());
-        ProductoResponse res = ProductoResponse.fromEntity(actualizado,
-                indexarImagenesPrincipales(List.of(id)).get(id));
-        enriquecer(List.of(res));
-        return res;
-    }
+          log.info("Producto ID: {} actualizado correctamente en MongoDB (version {})",
+                  id, actualizado.getVersion());
+          ProductoResponse res = ProductoResponse.fromEntity(actualizado,
+                  indexarImagenesPrincipales(List.of(id)).get(id));
+          enriquecer(List.of(res));
+          // Las categorías se replican DESPUÉS de validar la versión: si el
+          // guardado va a fallar por conflicto, no tiene sentido haber aplicado
+          // a medias el cambio de categorías en Django.
+          sincronizarCategorias(id, request.getCategoriaIds());
+          res.setCategorias(interServiceClient.obtenerCategorias(id));
+          return res;
+      }
 
     @Override
     public void cambiarEstado(String id, EstadoProducto nuevoEstado) {
@@ -365,6 +394,185 @@ public class ProductoServiceImpl implements ProductoService {
         producto.onUpdate();
         productoRepository.save(producto);
         log.info("Estado del producto ID: {} actualizado a {}", id, nuevoEstado);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Auditoría
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Historial de auditoría del producto, del más reciente al más antiguo.
+     *
+     * Reemplaza a GET /api/products/{id}/audits/ de Django, que en la rama
+     * MongoDB no puede resolver el producto por su ObjectId. La fuente de
+     * verdad es la colección producto_auditoria.
+     */
+    @Override
+    public List<ProductoAuditoria> listarAuditorias(String id) {
+        if (!productoRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Producto no encontrado con ID: " + id);
+        }
+        return auditoriaRepository.findByProductoIdOrderByCreatedAtDesc(id);
+    }
+
+    @Override
+    public ProductoResponse desaprobar(String id, String motivo) {
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
+
+        Map<String, Object> before = snapshot(producto);
+
+        // Desaprobar = desactivar y volver a dejar pendiente de aprobación.
+        // Se hace sobre los tres campos y no solo sobre `estado` porque en
+        // MongoDB isActive y aprobado son banderas independientes y el catálogo
+        // filtra por ellas, no por estado.
+        producto.setAprobado(false);
+        producto.setIsActive(false);
+        producto.setEstado(EstadoProducto.INACTIVO);
+        producto.setVersion(producto.getVersion() == null ? 1L : producto.getVersion() + 1);
+        producto.onUpdate();
+        Producto actualizado = productoRepository.save(producto);
+
+        registrarAuditoria(id, ProductoAuditoria.ACTION_DISAPPROVED,
+                before, snapshot(actualizado), motivo);
+        log.info("Producto ID: {} desaprobado. Motivo: {}", id, motivo);
+
+        ProductoResponse res = ProductoResponse.fromEntity(actualizado,
+                indexarImagenesPrincipales(List.of(id)).get(id));
+        enriquecer(List.of(res));
+        return res;
+    }
+
+    @Override
+    public ProductoResponse cambiarActivo(String id) {
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
+
+        boolean nuevoValor = !Boolean.TRUE.equals(producto.getIsActive());
+        producto.setIsActive(nuevoValor);
+        producto.setEstado(nuevoValor ? EstadoProducto.ACTIVO : EstadoProducto.INACTIVO);
+        producto.sincronizarEstado();
+        producto.setVersion(producto.getVersion() == null ? 1L : producto.getVersion() + 1);
+        producto.onUpdate();
+        Producto actualizado = productoRepository.save(producto);
+
+        registrarAuditoria(id, ProductoAuditoria.ACTION_UPDATED,
+                Map.of("is_active", !nuevoValor),
+                Map.of("is_active", nuevoValor),
+                nuevoValor ? "activado" : "desactivado");
+
+        ProductoResponse res = ProductoResponse.fromEntity(actualizado,
+                indexarImagenesPrincipales(List.of(id)).get(id));
+        enriquecer(List.of(res));
+        return res;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Imágenes
+    // ═══════════════════════════════════════════════════════════════════════
+
+    @Override
+    public ProductoImagenDTO agregarImagen(String id, String image, boolean esPrincipal) {
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
+        if (image == null || image.isBlank()) {
+            throw new BusinessRuleException("La URL de la imagen es obligatoria");
+        }
+
+        // Una sola imagen principal por producto: si la nueva lo es, se
+        // democan las demás. Sin esto, dos imágenes con esPrincipal=true
+        // harían que el catálogo mostrara una distinta cada vez.
+        if (esPrincipal) {
+            productoImagenRepository.findByProductoIdAndEsPrincipalTrue(id)
+                    .forEach(a -> { a.setEsPrincipal(false); productoImagenRepository.save(a); });
+        }
+
+        ProductoImagen nueva = new ProductoImagen();
+        nueva.setProductoId(id);
+        nueva.setImage(image.trim());
+        nueva.setEsPrincipal(esPrincipal || productoImagenRepository.countByProductoId(id) == 0);
+        // ProductoImagen no extiende BaseEntity y MongoDB no dispara @PrePersist,
+        // así que la fecha se rellena a mano como hace el resto del servicio.
+        // Sin esto, createdAt queda null y findByProductoIdOrderByCreatedAtAsc
+        // devolvería la galería en un orden arbitrario.
+        nueva.setCreatedAt(LocalDateTime.now());
+        ProductoImagen guardada = productoImagenRepository.save(nueva);
+        log.info("Imagen {} añadida al producto {}", guardada.getId(), id);
+        return toImagenDTO(guardada);
+    }
+
+    @Override
+    public void eliminarImagen(String id, String imagenId) {
+        ProductoImagen imagen = productoImagenRepository.findById(imagenId)
+                .filter(i -> i.getProductoId() != null && i.getProductoId().equals(id))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "La imagen " + imagenId + " no pertenece al producto " + id));
+        productoImagenRepository.delete(imagen);
+        log.info("Imagen {} eliminada del producto {}", imagenId, id);
+    }
+
+    @Override
+    public ProductoImagenDTO marcarImagenPrincipal(String id, String imagenId) {
+        ProductoImagen imagen = productoImagenRepository.findById(imagenId)
+                .filter(i -> i.getProductoId() != null && i.getProductoId().equals(id))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "La imagen " + imagenId + " no pertenece al producto " + id));
+
+        // Se democan las demás antes de promover esta. Al revés (promover y
+        // luego limpiar) dejaría un instante con dos principales, y el
+        // catálogo puede leer entremedias y mostrar la imagen equivocada.
+        productoImagenRepository.findByProductoIdAndEsPrincipalTrue(id).stream()
+                .filter(otra -> !otra.getId().equals(imagenId))
+                .forEach(otra -> {
+                    otra.setEsPrincipal(false);
+                    productoImagenRepository.save(otra);
+                });
+
+        imagen.setEsPrincipal(true);
+        ProductoImagen guardada = productoImagenRepository.save(imagen);
+        log.info("Imagen {} promovida a principal del producto {}", imagenId, id);
+        return toImagenDTO(guardada);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Variantes
+    // ═══════════════════════════════════════════════════════════════════════
+
+    @Override
+    public VarianteDTO guardarVariante(String id, VarianteDTO request, String varianteId) {
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
+
+        Variante variante = (varianteId == null || varianteId.isBlank())
+                ? new Variante()
+                : varianteRepository.findById(varianteId)
+                        .filter(v -> v.getProductoId() != null && v.getProductoId().equals(id))
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "La variante " + varianteId + " no pertenece al producto " + id));
+
+        variante.setProductoId(id);
+        variante.setSize(request.getSize());
+        variante.setColor(request.getColor());
+        variante.setColorHex(request.getColorHex());
+        variante.setColorNombre(request.getColorNombre());
+        variante.setStock(request.getStock() == null ? 0 : request.getStock());
+        variante.setPriceVariant(request.getPriceVariant());
+        if (variante.getCreatedAt() == null) {
+            variante.setCreatedAt(LocalDateTime.now());
+        }
+        Variante guardada = varianteRepository.save(variante);
+        log.info("Variante {} guardada en el producto {}", guardada.getId(), id);
+        return toVarianteDTO(guardada, producto.getPrecioBase());
+    }
+
+    @Override
+    public void eliminarVariante(String id, String varianteId) {
+        Variante variante = varianteRepository.findById(varianteId)
+                .filter(v -> v.getProductoId() != null && v.getProductoId().equals(id))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "La variante " + varianteId + " no pertenece al producto " + id));
+        varianteRepository.delete(variante);
+        log.info("Variante {} eliminada del producto {}", varianteId, id);
     }
 
     @Override
