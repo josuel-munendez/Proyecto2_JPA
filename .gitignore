@@ -19,3 +19,6 @@ buildNumber.properties
 logs/
 .~lock.*
 *.lck
+
+# Classpath generado por 'mvn dependency:build-classpath' (artefacto local)
+servicio/cp.txt
