@@ -2,6 +2,7 @@ package com.example.servicio.controller;
 
 import com.example.servicio.dto.ProductoRequest;
 import com.example.servicio.dto.ProductoResponse;
+import com.example.servicio.entity.Producto.EstadoProducto;
 import com.example.servicio.service.ProductoService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -61,7 +62,7 @@ public class ProductoViewController {
     public String mostrarFormularioCrear(Model model) {
         log.info("MongoDB VIEW: Mostrando formulario de creacion de producto");
         model.addAttribute("productoRequest", new ProductoRequest());
-        model.addAttribute("titulo", "Crear Nuevo Producto (MongoDB)");
+        model.addAttribute("titulo", "Crear Nuevo Producto");
         return "productos/form";
     }
 
@@ -74,13 +75,13 @@ public class ProductoViewController {
 
         if (bindingResult.hasErrors()) {
             log.warn("MongoDB VIEW: Errores de validacion al guardar producto: {}", bindingResult.getAllErrors());
-            model.addAttribute("titulo", "Crear Nuevo Producto (MongoDB)");
+            model.addAttribute("titulo", "Crear Nuevo Producto");
             return "productos/form";
         }
 
         log.info("MongoDB VIEW: Guardando producto - referencia={}", request.getReferencia());
         productoService.crearProducto(request);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Producto guardado correctamente en MongoDB");
+        redirectAttributes.addFlashAttribute("mensajeExito", "Producto guardado correctamente");
         return "redirect:/productos";
     }
 
@@ -99,7 +100,7 @@ public class ProductoViewController {
 
             model.addAttribute("productoRequest", request);
             model.addAttribute("productoId", id);
-            model.addAttribute("titulo", "Editar Producto MongoDB #" + id);
+            model.addAttribute("titulo", "Editar Producto #" + id);
             return "productos/form";
         } catch (Exception e) {
             log.error("MongoDB VIEW: Error al cargar producto ID {} para edicion: {}", id, e.getMessage());
@@ -119,13 +120,13 @@ public class ProductoViewController {
         if (bindingResult.hasErrors()) {
             log.warn("MongoDB VIEW: Errores de validacion al actualizar producto ID {}: {}", id, bindingResult.getAllErrors());
             model.addAttribute("productoId", id);
-            model.addAttribute("titulo", "Editar Producto MongoDB #" + id);
+            model.addAttribute("titulo", "Editar Producto #" + id);
             return "productos/form";
         }
 
         log.info("MongoDB VIEW: Actualizando producto ID {}", id);
         productoService.actualizarProducto(id, request);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Producto actualizado correctamente en MongoDB");
+        redirectAttributes.addFlashAttribute("mensajeExito", "Producto actualizado correctamente");
         return "redirect:/productos";
     }
 
@@ -133,7 +134,7 @@ public class ProductoViewController {
     public String eliminarProducto(@PathVariable String id, RedirectAttributes redirectAttributes) {
         log.info("MongoDB VIEW: Eliminando producto ID {}", id);
         productoService.eliminarLogico(id);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Producto eliminado correctamente de MongoDB");
+        redirectAttributes.addFlashAttribute("mensajeExito", "Producto eliminado correctamente");
         return "redirect:/productos";
     }
 }

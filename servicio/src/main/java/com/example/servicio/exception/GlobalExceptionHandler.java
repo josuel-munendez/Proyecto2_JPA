@@ -58,6 +58,46 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja el conflicto de version (bloqueo optimista).
+     *
+     * En esta rama MongoDB solo se cubre VersionConflictException, que es el
+     * chequeo explicito de `version` en ProductoServiceImpl: el cliente envio
+     * una version que ya no es la vigente porque otro usuario (u otro backend)
+     * escribio mientras el formulario estaba abierto. No se mapean
+     * OptimisticLockingFailureException ni jakarta.persistence.OptimisticLockException
+     * porque son de Hibernate y esta rama no usa JPA.
+     *
+     * @return HTTP 409 CONFLICT con la version que el cliente deberia recargar.
+     */
+    @ExceptionHandler(VersionConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleVersionConflict(VersionConflictException ex) {
+        log.warn("Excepcion 409 Conflicto de version (optimistic locking): {}", ex.getMessage());
+        Map<String, Object> detalles = new HashMap<>();
+        detalles.put("versionEsperada", ex.getVersionEsperada());
+        detalles.put("versionActual", ex.getVersionActual());
+        return crearRespuestaError(HttpStatus.CONFLICT,
+                "El producto fue modificado por otro usuario. Recargue para ver los cambios mas recientes.",
+                detalles);
+    }
+
+    /**
+     * Fallo de la dependencia Django durante una operacion que no puede
+     * completarse sin ella.
+     *
+     * 503 y no 400 a proposito: el producto es valido, lo que falla es el
+     * servicio de destino. Asi el frontend puede reintentar en lugar de
+     * pedirle al usuario que corrija datos.
+     */
+    @ExceptionHandler(InterServiceException.class)
+    public ResponseEntity<Map<String, Object>> handleInterService(InterServiceException ex) {
+        log.error("El backend Django no esta disponible: {}", ex.getMessage());
+        return crearRespuestaError(HttpStatus.SERVICE_UNAVAILABLE,
+                "El servicio de Django no esta disponible. La operacion se cancelo sin cambios; "
+                + "reintenta en unos instantes.",
+                Map.of());
+    }
+
+    /**
      * Maneja fallos en las validaciones de anotaciones Jakarta (@Valid / @NotBlank / @Size, etc.).
      *
      * @param ex Excepción lanzada por Spring MVC cuando la validación del RequestBody falla.

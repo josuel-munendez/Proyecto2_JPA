@@ -17,3 +17,5 @@ buildNumber.properties
 .classpath
 
 .~lock.*
+# Logs rotados del servicio (logback)
+servicio/logs/

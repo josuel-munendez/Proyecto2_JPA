@@ -60,9 +60,24 @@ public class Producto extends BaseEntity {
 
     private Boolean aprobado = false;
 
+    /**
+     * Visibilidad en el catálogo. El frontend lee `isActive` y, si viene
+     * ausente, deduce de `estado`; ambos se exponen para no romper ninguno de
+     * los dos clientes.
+     */
+    private Boolean isActive = false;
+
     private EstadoProducto estado = EstadoProducto.INACTIVO;
 
     private Integer stock = 0;
+
+    /**
+     * Version de bloqueo optimista. El frontend la reenvia en cada PUT y el
+     * servicio responde 409 si otro usuario escribio mientras el formulario
+     * estaba abierto. Se incrementa en el servicio, no con @Version, porque
+     * MongoDB no tiene esa anotacion.
+     */
+    private Long version = 0L;
 
     public Producto() {
     }
@@ -91,10 +106,31 @@ public class Producto extends BaseEntity {
     public void setReferencia(String referencia) { this.referencia = referencia; }
     public Boolean getAprobado() { return aprobado; }
     public void setAprobado(Boolean aprobado) { this.aprobado = aprobado; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
     public EstadoProducto getEstado() { return estado; }
     public void setEstado(EstadoProducto estado) { this.estado = estado; }
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
+
+    /**
+     * Sincroniza `estado` e `isActive` para que nunca se contradigan.
+     *
+     * El enum `estado` es la representacion que ya tenia esta rama; `isActive`
+     * es la que consume el frontend (que ademas la deduce de `estado` si
+     * falta). ACTIVO/INACTIVO se mapean a true/false, y BORRADO fuerza ambos
+     * a false: un producto con soft delete no esta ni activo ni aprobado, que
+     * es justo la combinacion que exige la purga fisica.
+     */
+    public void sincronizarEstado() {
+        if (estado == EstadoProducto.BORRADO) {
+            this.isActive = false;
+        } else if (estado != null) {
+            this.isActive = estado == EstadoProducto.ACTIVO;
+        }
+    }
 
     public boolean esPrecioCopValido() {
         if (precioBase == null) return false;
