@@ -22,3 +22,6 @@ logs/
 
 # Classpath generado por 'mvn dependency:build-classpath' (artefacto local)
 servicio/cp.txt
+
+# IntelliJ IDEA: configuracion local de un solo desarrollador
+.idea/
