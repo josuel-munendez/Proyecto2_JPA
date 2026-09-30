@@ -1,6 +1,7 @@
 package com.example.servicio.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.example.servicio.TestcontainersConfiguration;
 import com.example.servicio.entity.Producto;
 import com.example.servicio.entity.Producto.EstadoProducto;
+import com.example.servicio.exception.ResourceNotFoundException;
 import com.example.servicio.entity.ProductoImagen;
 import com.example.servicio.entity.Variante;
 import com.example.servicio.repository.ProductoAuditoriaRepository;
@@ -218,5 +220,54 @@ class ProductoBusquedaTest {
         // y una respuesta enorme para datos que la vista no usa.
         assertThat(pagina.getContent().get(0).getImagenes()).isEmpty();
         assertThat(pagina.getContent().get(0).getVariantes()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("el detalle de un producto borrado da 404, no 200 con el producto muerto")
+    void elDetalleDeUnProductoBorradoNoSeVe() {
+        guardar("Producto a eliminar", "BOR-001");
+        var guardado = productoRepository.findByEstadoNot(EstadoProducto.BORRADO, PAGINA)
+                .getContent().get(0);
+        productoService.eliminarLogico(guardado.getId());
+
+        // El listado ya ocultaba los BORRADO, pero el detalle iba con findById
+        // a secas y devolvia 200 con el producto entero. Asi, abrir el detalle
+        // de algo ya eliminado lo resucitaba en pantalla y el admin podia
+        // seguir editandolo.
+        assertThat(productoRepository.findById(guardado.getId()))
+                .as("el documento sigue en Mongo: es borrado logico, no fisico")
+                .isPresent();
+
+        assertThatThrownBy(() -> productoService.obtenerPorId(guardado.getId()))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(guardado.getId());
+    }
+
+    @Test
+    @DisplayName("un producto activo sigue viendose en el detalle")
+    void elDetalleDeUnProductoActivoSeVe() {
+        guardar("Producto visible", "VIS-001");
+        var guardado = productoRepository.findByEstadoNot(EstadoProducto.BORRADO, PAGINA)
+                .getContent().get(0);
+
+        var respuesta = productoService.obtenerPorId(guardado.getId());
+
+        assertThat(respuesta.getId()).isEqualTo(guardado.getId());
+        assertThat(respuesta.getNombre()).isEqualTo("Producto visible");
+    }
+
+    @Test
+    @DisplayName("un producto inactivo o pendiente tambien se ve: solo se ocultan los borrados")
+    void elDetalleNoOcultaLosQueSoloEstanInactivos() {
+        // El filtro es por BORRADO, no por isActive: un producto desactivado
+        // sigue siendo real y el panel de administracion tiene que poder abrirlo.
+        productoRepository.save(new Producto(null, "Inactivo", "descripcion",
+                new java.math.BigDecimal("100"), "INA-001", false, EstadoProducto.INACTIVO, 1));
+
+        var guardado = productoRepository.findByEstadoNot(EstadoProducto.BORRADO, PAGINA)
+                .getContent().get(0);
+
+        assertThat(productoService.obtenerPorId(guardado.getId()).getId())
+                .isEqualTo(guardado.getId());
     }
 }

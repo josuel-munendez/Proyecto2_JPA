@@ -44,6 +44,16 @@ public interface ProductoRepository extends MongoRepository<Producto, String>, P
 
     Page<Producto> findByEstadoNot(EstadoProducto estado, Pageable pageable);
 
+    /**
+     * Detalle de un producto que no esté eliminado.
+     *
+     * El listado ya usa findByEstadoNot para esconder los borrados, pero
+     * obtenerPorId iba con findById a secas y devolvía 200 con el producto
+     * BORRADO: el listado lo ocultaba y, al abrir el detalle o editarlo, el
+     * admin se encontraba el producto "vivo" otra vez y podía modificarlo.
+     */
+    Optional<Producto> findByIdAndEstadoNot(String id, EstadoProducto estado);
+
     Page<Producto> findByNombreContainingIgnoreCaseAndIsActive(
             String nombre, Boolean isActive, Pageable pageable);
 

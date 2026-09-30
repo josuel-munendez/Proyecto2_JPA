@@ -276,7 +276,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public ProductoResponse obtenerPorId(String id) {
-        Producto producto = productoRepository.findById(id)
+        Producto producto = productoRepository.findByIdAndEstadoNot(id, EstadoProducto.BORRADO)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
         ProductoResponse res = toResponse(producto, indexarImagenesPrincipales(List.of(id)));
         enriquecer(List.of(res));
