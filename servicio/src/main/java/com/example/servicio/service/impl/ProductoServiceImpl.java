@@ -278,9 +278,7 @@ public class ProductoServiceImpl implements ProductoService {
     public ProductoResponse obtenerPorId(String id) {
         Producto producto = productoRepository.findByIdAndEstadoNot(id, EstadoProducto.BORRADO)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
-        ProductoResponse res = toResponse(producto, indexarImagenesPrincipales(List.of(id)));
-        enriquecer(List.of(res));
-        adjuntarSubrecursos(res, producto);
+        ProductoResponse res = toDetalleEnriquecido(producto);
         res.setCategorias(interServiceClient.obtenerCategorias(id));
         return res;
     }
@@ -306,6 +304,70 @@ public class ProductoServiceImpl implements ProductoService {
                 .stream()
                 .map(v -> toVarianteDTO(v, producto.getPrecioBase()))
                 .toList());
+    }
+
+    /**
+     * Detalle de un producto con UNA consulta por coleccion.
+     *
+     * Antes este camino hacia el mismo dato por tres rutas distintas: la
+     * imagen principal se pedia con findByProductoIdInAndEsPrincipalTrue,
+     * enriquecer() volvia a pedir TODAS las imagenes para contar y
+     * adjuntarSubrecursos las pedia una tercera vez para devolver la lista.
+     * Las variantes se pedian dos veces. Con eso, abrir un producto costing
+     * 8 viajes: producto + 3 de imagenes + 2 de variantes + auditoria + una
+     * llamada HTTP a Django.
+     *
+     * Aqui se pide cada coleccion una vez y de ella se derivan el resumen
+     * (mainImage, imagesCount, variantsCount, totalStock, readyToPublish) y
+     * las listas completas, dejando el mismo resultado en 5 viajes.
+     *
+     * Se conservan los dos detalles sutiles de enriquecer():
+     * - si hay varias imagenes marcadas como principales, gana la primera
+     *   que aparezca (era el merge (a, b) -> a del Collectors.toMap);
+     * - totalStock solo suma variantes con stock > 0, y si ninguna aporta
+     *   stock se cae al stock del producto padre.
+     */
+    private ProductoResponse toDetalleEnriquecido(Producto producto) {
+        List<ProductoImagen> imagenes =
+                productoImagenRepository.findByProductoIdOrderByCreatedAtAsc(producto.getId());
+        List<Variante> variantes =
+                varianteRepository.findByProductoIdOrderByIdAsc(producto.getId());
+
+        String mainImage = imagenes.stream()
+                .filter(img -> Boolean.TRUE.equals(img.getEsPrincipal()))
+                .map(ProductoImagen::getImage)
+                .findFirst()
+                .orElse(null);
+
+        ProductoResponse res = ProductoResponse.fromEntity(producto, mainImage);
+
+        res.setImagenes(imagenes.stream().map(this::toImagenDTO).toList());
+        res.setVariantes(variantes.stream()
+                .map(v -> toVarianteDTO(v, producto.getPrecioBase()))
+                .toList());
+        res.setImagesCount((long) imagenes.size());
+        res.setVariantsCount((long) variantes.size());
+
+        int stockDeVariantes = variantes.stream()
+                .map(Variante::getStock)
+                .filter(s -> s != null && s > 0)
+                .mapToInt(Integer::intValue)
+                .sum();
+        boolean hayStock = variantes.stream().anyMatch(v -> v.getStock() != null && v.getStock() > 0);
+        res.setTotalStock(stockDeVariantes > 0
+                ? stockDeVariantes
+                : (producto.getStock() != null ? producto.getStock() : 0));
+        res.setReadyToPublish(mainImage != null && hayStock);
+
+        Set<String> actions = auditoriaRepository.findHistorialDe(List.of(producto.getId())).stream()
+                .filter(a -> producto.getId().equals(a.getProductoId()))
+                .map(ProductoAuditoria::getAction)
+                .collect(Collectors.toSet());
+        res.setWasDisapproved(actions.contains(ProductoAuditoria.ACTION_DISAPPROVED));
+        res.setWasPublished(actions.contains(ProductoAuditoria.ACTION_PUBLISHED));
+        res.setWasDeleted(actions.contains(ProductoAuditoria.ACTION_DELETED));
+
+        return res;
     }
 
     private ProductoImagenDTO toImagenDTO(ProductoImagen imagen) {
