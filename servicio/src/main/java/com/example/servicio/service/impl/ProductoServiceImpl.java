@@ -415,6 +415,16 @@ public class ProductoServiceImpl implements ProductoService {
      * Django se aplica en Python y no en PostgreSQL. Si no se limpian las
      * tablas hijas, el DELETE del producto falla con
      * DataIntegrityViolationException.
+     *
+     * La guardia 3 tiene un matiz importante: si Django no responde, el dato es
+     * DESCONOCIDO, no "tiene ordenes". InterServiceClient lanza entonces
+     * InterServiceUnavailableException y la purga se corta igual (el fail-safe
+     * no se toca), pero el cliente recibe un 503 con el motivo real en vez de un
+     * 400 que afirmaria falsamente que el producto tiene historial de ventas.
+     *
+     * @throws com.example.servicio.exception.ResourceNotFoundException      si no existe (→ 404)
+     * @throws com.example.servicio.exception.BusinessRuleException          si no es elegible o tiene ordenes (→ 400)
+     * @throws com.example.servicio.exception.InterServiceUnavailableException si Django no pudo responder (→ 503)
      */
     @Override
     public void purgarProducto(Long id) {

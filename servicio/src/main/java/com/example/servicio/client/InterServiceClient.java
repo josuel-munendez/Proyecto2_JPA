@@ -1,5 +1,6 @@
 package com.example.servicio.client;
 
+import com.example.servicio.exception.InterServiceUnavailableException;
 import java.util.List;
 import java.util.Map;
 
@@ -30,12 +31,14 @@ import org.springframework.web.util.UriComponentsBuilder;
  * RestClientConfig.
  *
  * PRINCIPIO FAIL-SAFE: cuando una consulta protege una operación destructiva
- * y Django no responde, el método devuelve el valor que BLOQUEA la operación.
- * Es preferible no purgar un producto a purgar mal y perder la trazabilidad de
- * una orden. Por eso {@link #tieneOrdenesAsociadas(Long)} devuelve {@code true}
- * ante cualquier error. Los métodos de solo-lectura (health, stats, recent,
- * exists) en cambio devuelven un valor neutro, porque no hay nada que
- * proteger.
+ * y Django no responde, la operación se BLOQUEA igual. Es preferible no purgar
+ * un producto a purgar mal y perder la trazabilidad de una orden. La diferencia
+ * es que ya no se devuelve un {@code true} silencioso: se lanza
+ * {@link InterServiceUnavailableException}, de modo que el mensaje que ve el
+ * operador dice "no se pudo verificar" en vez de afirmar "tiene órdenes", que es
+ * un dato que el microservicio no llegó a conocer. Los métodos de solo-lectura
+ * (health, stats, recent, exists) sí devuelven un valor neutro, porque no hay
+ * nada que proteger.
  */
 @Component
 public class InterServiceClient {
@@ -56,24 +59,44 @@ public class InterServiceClient {
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * @return true si el producto tiene al menos una línea de orden asociada.
-     *         true TAMBIÉN si la consulta falla (fail-safe de integridad).
+     * Consulta a Django si el producto tiene líneas de orden asociadas.
+     *
+     * <p>Único método que <b>no</b> degrada a un valor por defecto ante un
+     * error: lanza {@link InterServiceUnavailableException}. El fail-safe se
+     * mantiene intacto porque el servicio trata esa excepción como bloqueo, pero
+     * el operador recibe un 503 honesto en vez de un 400 que afirma un hecho
+     * falso.</p>
+     *
+     * @param productoId Id del producto a verificar.
+     * @return {@code true} si el producto tiene al menos una línea de orden
+     *         asociada. Falso positivo explícito: sólo cuando Django respondió
+     *         y respondió que no.
+     * @throws InterServiceUnavailableException si la consulta no pudo
+     *         completarse (Django caído, 401 por token interno ausente,
+     *         timeout). El dato es desconocido, no "tiene órdenes".
      */
     public boolean tieneOrdenesAsociadas(Long productoId) {
+        Map<String, Object> body;
         try {
-            Map<String, Object> body = restClient.get()
+            body = restClient.get()
                     .uri("/api/orders/check-product/{id}/", productoId)
                     .retrieve()
                     .body(MAP_TYPE);
-            boolean has = body != null && Boolean.TRUE.equals(body.get("has_orders"));
-            log.info("INTER-SERVICE: producto {} tieneOrdenes={}", productoId, has);
-            return has;
         } catch (Exception e) {
-            log.warn("INTER-SERVICE: no se pudo verificar órdenes del producto {} ({}). "
-                    + "Se asume que tiene órdenes y se bloquea la purga.",
+            log.warn("INTER-SERVICE: no se pudo verificar ordenes del producto {} ({}). "
+                    + "Se bloquea la purga por fail-safe, pero el dato es desconocido.",
                     productoId, e.getMessage());
-            return true;
+            throw new InterServiceUnavailableException(
+                    "No se pudo verificar si el producto " + productoId
+                    + " tiene ordenes asociadas: el servicio de ordenes no respondio ("
+                    + e.getMessage() + "). La purga se bloquea por seguridad, pero no se "
+                    + "puede afirmar que el producto tenga ordenes. Verifique que el "
+                    + "backend Django este levantado y que INTERNAL_API_TOKEN coincida.",
+                    e);
         }
+        boolean has = body != null && Boolean.TRUE.equals(body.get("has_orders"));
+        log.info("INTER-SERVICE: producto {} tieneOrdenes={}", productoId, has);
+        return has;
     }
 
     // ═══════════════════════════════════════════════════════════════════════

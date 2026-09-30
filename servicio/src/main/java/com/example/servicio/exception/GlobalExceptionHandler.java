@@ -105,10 +105,28 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja la caída del servicio ajeno (Django) cuando una consulta
+     * inter-servicio debía proteger una operacion destructiva.
+     *
+     * <p>Se responde 503 y no 400 a proposito: un 400 (BusinessRuleException)
+     * afirma "el producto viola una regla", cuando en realidad lo que fallo fue
+     * que no se pudo <em>conocer</em> el dato. El 503 dice "reintenta mas
+     * tarde", que es la accion correcta para el operador.</p>
+     *
+     * @param ex Instancia de la excepcion capturada.
+     * @return HTTP 503 SERVICE UNAVAILABLE con el motivo real del fallo.
+     */
+    @ExceptionHandler(InterServiceUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleInterServiceUnavailable(InterServiceUnavailableException ex) {
+        log.warn("Excepcion 503 Servicio Interdependiente No Disponible: {}", ex.getMessage());
+        return crearRespuestaError(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), null);
+    }
+
+    /**
      * Manejador global de respaldo para cualquier excepción no controlada explícitamente.
      *
      * @param ex Excepción genérica capturada.
-     * @return Respuesta HTTP 500 (INTERNAL SERVER ERROR) con un mensaje amigable y seguro.
+     * @return HTTP 500 (INTERNAL SERVER ERROR) con un mensaje amigable y seguro.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex) {

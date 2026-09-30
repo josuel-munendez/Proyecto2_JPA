@@ -44,10 +44,11 @@ public class InterServiceConfigVerifier implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         log.info("INTER-SERVICE: Django={}", baseUrl);
         if (internalToken.isBlank()) {
-            log.warn("INTER-SERVICE: app.internal.token vacio. INTERNAL_API_TOKEN no esta "
+            log.warn("INTER-SERVICE: app.internal.token VACIO. INTERNAL_API_TOKEN no esta "
                     + "definida, el header X-Internal-Token viajara vacio y Django respondera 401. "
-                    + "Las purgas fisicas quedaran bloqueadas por el fail-safe con un 400 "
-                    + "'existen ordenes con este producto' aunque el producto no tenga ordenes. "
+                    + "Las purgas fisicas quedaran bloqueadas por el fail-safe con un 503 "
+                    + "'No se pudo verificar si el producto tiene ordenes' (NO es un problema de "
+                    + "ordenes: es que la consulta a Django no se pudo hacer). "
                     + "Arranque con start.sh o exporte INTERNAL_API_TOKEN antes de lanzar.");
         } else {
             log.info("INTER-SERVICE: X-Internal-Token configurado ({} caracteres)",

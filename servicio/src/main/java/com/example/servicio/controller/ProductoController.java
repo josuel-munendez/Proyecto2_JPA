@@ -156,8 +156,13 @@ public class ProductoController {
      *
      * <p>Si el producto no es elegible → BusinessRuleException → 400.</p>
      *
-     * @throws com.example.servicio.exception.ResourceNotFoundException si no existe (→ 404)
-     * @throws com.example.servicio.exception.BusinessRuleException     si tiene órdenes (→ 400)
+     * <p>Si Django no responde, el fail-safe de InterServiceClient bloquea la
+     * purga, pero lanzando InterServiceUnavailableException → 503, de modo que
+     * el mensaje no afirma falsamente que el producto tenga órdenes.</p>
+     *
+     * @throws com.example.servicio.exception.ResourceNotFoundException      si no existe (→ 404)
+     * @throws com.example.servicio.exception.BusinessRuleException          si tiene órdenes (→ 400)
+     * @throws com.example.servicio.exception.InterServiceUnavailableException si Django no respondió (→ 503)
      */
     @DeleteMapping("/{id}/purgar")
     public ResponseEntity<Void> purgarProducto(@PathVariable Long id) {
