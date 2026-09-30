@@ -25,3 +25,6 @@ servicio/cp.txt
 
 # IntelliJ IDEA: configuracion local de un solo desarrollador
 .idea/
+
+.github/
+.github/*
