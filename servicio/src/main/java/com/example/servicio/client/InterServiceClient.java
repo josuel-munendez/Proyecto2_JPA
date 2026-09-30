@@ -6,6 +6,7 @@ import java.util.Map;
 import com.example.servicio.client.dto.CategoriaDTO;
 import com.example.servicio.client.dto.CategoriasResponse;
 import com.example.servicio.exception.InterServiceException;
+import com.example.servicio.exception.InterServiceUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
@@ -158,7 +159,13 @@ public class InterServiceClient {
     /**
      * @param productoRef ObjectId de Mongo del producto.
      * @return true si el producto tiene al menos una línea de orden asociada.
-     *         true TAMBIÉN si la consulta falla (fail-safe de integridad).
+     * @throws InterServiceUnavailableException si Django no pudo responder. El
+     *         fail-safe NO cambia: quien llama sigue bloqueando la purga. Lo que
+     *         cambia es la honestidad del mensaje. Antes este método devolvía
+     *         true ante cualquier error, y ProductoServiceImpl traducía ese
+     *         true a "tiene ordenes", de modo que un 401 por
+     *         X-Internal-Token ausente salía en la UI como si el producto
+     *         tuviera historial. Igual de bloqueante, pero falso.
      */
     public boolean tieneOrdenesAsociadas(String productoRef) {
         try {
@@ -170,10 +177,13 @@ public class InterServiceClient {
             log.info("INTER-SERVICE: producto {} tieneOrdenes={}", productoRef, has);
             return has;
         } catch (Exception e) {
-            log.warn("INTER-SERVICE: no se pudo verificar órdenes del producto {} ({}). "
-                    + "Se asume que tiene órdenes y se bloquea la purga.",
+            log.error("INTER-SERVICE: no se pudo verificar si el producto {} tiene ordenes ({}). "
+                    + "Se aborta la purga por fail-safe, pero el motivo real es que la "
+                    + "consulta no pudo completarse.",
                     productoRef, e.getMessage());
-            return true;
+            throw new InterServiceUnavailableException(
+                    "No se pudo verificar si el producto tiene ordenes asociadas: "
+                            + e.getMessage(), e);
         }
     }
 

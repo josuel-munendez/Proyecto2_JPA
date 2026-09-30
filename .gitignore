@@ -25,3 +25,17 @@ servicio/logs/
 .env
 .env.*
 !**/.env.example
+
+.classpath*.log
+*.log.gz
+logs/
+*.lck
+
+# Classpath generado por 'mvn dependency:build-classpath' (artefacto local)
+servicio/cp.txt
+
+# IntelliJ IDEA: configuracion local de un solo desarrollador
+.idea/
+
+.github/
+.github/*

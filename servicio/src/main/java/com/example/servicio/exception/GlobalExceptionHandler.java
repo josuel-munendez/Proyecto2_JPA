@@ -98,6 +98,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * No se pudo CONSULTAR a Django, en vez de fallar al escribir en el.
+     *
+     * Es distinto de {@link InterServiceException}: aqui Django no hizo nada,
+     * solo que no se pudo leer su respuesta (típicamente 401 por
+     * X-Internal-Token ausente, o la dependencia caída). La purga sigue
+     * bloqueada por el fail-safe de InterServiceClient, pero la respuesta
+     * dice lo que pasó de verdad en vez de afirmar que el producto tiene
+     * órdenes. 503 y no 400: el producto es válido, no hay nada que el
+     * usuario pueda corregir.
+     */
+    @ExceptionHandler(InterServiceUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleInterServiceUnavailable(InterServiceUnavailableException ex) {
+        log.error("No se pudo consultar a Django: {}", ex.getMessage());
+        return crearRespuestaError(HttpStatus.SERVICE_UNAVAILABLE,
+                "No se pudo verificar el historial del producto porque el servicio de Django "
+                + "no respondio. La operacion se cancelo sin cambios; reintenta en unos instantes.",
+                Map.of());
+    }
+
+    /**
      * Maneja fallos en las validaciones de anotaciones Jakarta (@Valid / @NotBlank / @Size, etc.).
      *
      * @param ex Excepción lanzada por Spring MVC cuando la validación del RequestBody falla.

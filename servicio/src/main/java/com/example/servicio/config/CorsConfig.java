@@ -27,7 +27,7 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://localhost:8080}")
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,https://*.ngrok-free.dev}")
     private String allowedOrigins;
 
     /**
@@ -42,7 +42,9 @@ public class CorsConfig {
 
         config.setAllowCredentials(true);
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
-        config.setAllowedOrigins(origins);
+        // allowedOriginPatterns (no setAllowedOrigins): soporta orígenes exactos
+        // Y comodines como https://*.ngrok-free.dev junto a credenciales.
+        config.setAllowedOriginPatterns(origins);
         config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setMaxAge(3600L);

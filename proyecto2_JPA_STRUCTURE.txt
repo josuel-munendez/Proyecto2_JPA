@@ -1,0 +1,191 @@
+[     578616 Sep 30 12:45]  [01;34m.[0m
+├── [      17964 Sep 29 21:45]  [01;34m.github[0m
+│   ├── [         68 Sep 29 21:45]  [01;32m.ace-version.json[0m
+│   ├── [       2766 Sep 29 21:45]  [01;34magents[0m
+│   │   ├── [       2408 Sep 29 21:45]  [01;32mace.agent.md[0m
+│   │   └── [        298 Sep 29 21:45]  [01;32mace-learn.agent.md[0m
+│   ├── [       2745 Sep 29 21:45]  [01;34mhooks[0m
+│   │   └── [       2717 Sep 29 21:45]  [01;32mace-hooks.json[0m
+│   ├── [       2405 Sep 29 21:45]  [01;34minstructions[0m
+│   │   └── [       2367 Sep 29 21:45]  [01;32mace.instructions.md[0m
+│   ├── [       2920 Sep 29 21:45]  [01;34mskills[0m
+│   │   └── [       2880 Sep 29 21:45]  [01;34mace-pattern-learning[0m
+│   │       └── [       2864 Sep 29 21:45]  [01;32mSKILL.md[0m
+│   └── [       6950 Sep 29 21:45]  [01;34mworkflows[0m
+│       ├── [       2624 Sep 29 21:45]  [01;32mci.yml[0m
+│       ├── [       3135 Sep 29 21:45]  [01;32mdeploy.yml[0m
+│       └── [       1135 Sep 29 21:45]  [01;32msecurity.yml[0m
+├── [        607 Sep 29 21:45]  [01;32m.gitignore[0m
+├── [       1393 Sep 22 18:01]  [01;34m.idea[0m
+│   ├── [        228 Sep 22 18:01]  [01;32m.gitignore[0m
+│   ├── [        241 Sep 22 18:01]  [01;32mmisc.xml[0m
+│   ├── [        278 Sep 22 18:01]  [01;32mmodules.xml[0m
+│   ├── [        336 Sep 22 18:01]  [01;32mProyecto2_JPA.iml[0m
+│   └── [        204 Sep 22 18:01]  [01;32mvcs.xml[0m
+├── [         86 Sep 21 16:14]  [01;32m.~lock.README.md#[0m
+├── [         24 Sep 29 16:47]  [01;34mlogs[0m
+├── [      11497 Sep 30 10:13]  [01;34mpostman[0m
+│   └── [      11407 Sep 30 10:16]  Proyecto2-3-Productos.postman_collection.json
+├── [       6499 Sep 22 18:01]  [01;32mProyecto2_JPA_STRUCTURE.md[0m
+├── [       6537 Sep 22 18:01]  [01;32mProyecto2_JPA_STRUCTURE.txt[0m
+├── [          0 Sep 30 12:45]  proyecto2_JPA.txt
+├── [      15109 Sep 29 16:43]  [01;32mREADME.md[0m
+├── [     507581 Sep 29 21:52]  [01;34mservicio[0m
+│   ├── [      13984 Sep 29 16:27]  [01;32mcp.txt[0m
+│   ├── [         38 Sep 22 18:01]  [01;32m.gitattributes[0m
+│   ├── [        394 Sep 22 18:01]  [01;32m.gitignore[0m
+│   ├── [     118956 Sep 30 08:59]  [01;34mlogs[0m
+│   │   ├── [      39846 Sep 24 02:06]  [01;32mservicio-2026-09-23.0.log.gz[0m
+│   │   ├── [      23460 Sep 25 00:01]  [01;32mservicio-2026-09-24.0.log.gz[0m
+│   │   ├── [      23169 Sep 28 18:54]  [01;32mservicio-2026-09-25.0.log.gz[0m
+│   │   ├── [      11054 Sep 29 06:33]  [01;32mservicio-2026-09-28.0.log.gz[0m
+│   │   └── [      21087 Sep 30 08:59]  [01;31mservicio-2026-09-29.0.log.gz[0m
+│   ├── [        230 Sep 21 03:27]  [01;34m.mvn[0m
+│   │   └── [        216 Sep 22 18:01]  [01;34mwrapper[0m
+│   │       └── [        168 Sep 22 18:01]  [01;32mmaven-wrapper.properties[0m
+│   ├── [      11790 Sep 21 03:27]  [01;32mmvnw[0m
+│   ├── [       8481 Sep 22 18:01]  [01;32mmvnw.cmd[0m
+│   ├── [       3170 Sep 22 18:01]  [01;32mpom.xml[0m
+│   ├── [     146923 Sep 21 03:27]  [01;34msrc[0m
+│   │   ├── [     145369 Sep 21 03:27]  [01;34mmain[0m
+│   │   │   ├── [     135216 Sep 21 03:27]  [01;34mjava[0m
+│   │   │   │   └── [     135210 Sep 21 03:27]  [01;34mcom[0m
+│   │   │   │       └── [     135196 Sep 21 03:27]  [01;34mexample[0m
+│   │   │   │           └── [     135180 Sep 24 06:05]  [01;34mservicio[0m
+│   │   │   │               ├── [       8904 Sep 24 06:05]  [01;34mclient[0m
+│   │   │   │               │   └── [       8858 Sep 30 12:21]  [01;32mInterServiceClient.java[0m
+│   │   │   │               ├── [      10744 Sep 25 21:40]  [01;34mconfig[0m
+│   │   │   │               │   ├── [       2544 Sep 23 21:38]  [01;32mCorsConfig.java[0m
+│   │   │   │               │   ├── [       2679 Sep 30 12:23]  [01;32mInterServiceConfigVerifier.java[0m
+│   │   │   │               │   ├── [       2541 Sep 25 14:14]  [01;32mRestClientConfig.java[0m
+│   │   │   │               │   └── [       2808 Sep 22 18:01]  [01;32mSecurityConfig.java[0m
+│   │   │   │               ├── [      21971 Sep 22 18:01]  [01;34mcontroller[0m
+│   │   │   │               │   ├── [      15968 Sep 30 12:21]  [01;32mProductoController.java[0m
+│   │   │   │               │   └── [       5903 Sep 22 18:01]  [01;32mProductoViewController.java[0m
+│   │   │   │               ├── [      12524 Sep 22 18:01]  [01;34mdto[0m
+│   │   │   │               │   ├── [       3271 Sep 22 18:01]  [01;32mProductoPageResponse.java[0m
+│   │   │   │               │   ├── [       4296 Sep 25 13:49]  [01;32mProductoRequest.java[0m
+│   │   │   │               │   └── [       4825 Sep 25 13:49]  [01;32mProductoResponse.java[0m
+│   │   │   │               ├── [      16359 Sep 29 16:30]  [01;34mentity[0m
+│   │   │   │               │   ├── [       1626 Sep 22 18:01]  [01;32mBaseEntity.java[0m
+│   │   │   │               │   ├── [       1821 Sep 29 16:30]  [01;32mProductoGrupos.java[0m
+│   │   │   │               │   ├── [       2144 Sep 23 10:14]  [01;32mProductoImagen.java[0m
+│   │   │   │               │   ├── [       8246 Sep 29 16:30]  [01;32mProducto.java[0m
+│   │   │   │               │   └── [       2364 Sep 24 06:30]  [01;32mVariante.java[0m
+│   │   │   │               ├── [      14003 Sep 30 12:21]  [01;34mexception[0m
+│   │   │   │               │   ├── [       1074 Sep 22 18:01]  [01;32mBusinessRuleException.java[0m
+│   │   │   │               │   ├── [       7531 Sep 30 12:21]  [01;32mGlobalExceptionHandler.java[0m
+│   │   │   │               │   ├── [       2790 Sep 30 12:21]  InterServiceUnavailableException.java
+│   │   │   │               │   ├── [       1031 Sep 22 18:01]  [01;32mResourceNotFoundException.java[0m
+│   │   │   │               │   └── [       1279 Sep 25 13:50]  [01;32mVersionConflictException.java[0m
+│   │   │   │               ├── [      12639 Sep 24 06:30]  [01;34mrepository[0m
+│   │   │   │               │   ├── [       2156 Sep 28 19:13]  [01;32mProductoImagenRepository.java[0m
+│   │   │   │               │   ├── [       8644 Sep 28 19:14]  [01;32mProductoRepository.java[0m
+│   │   │   │               │   └── [       1689 Sep 28 19:13]  [01;32mVarianteRepository.java[0m
+│   │   │   │               ├── [       8809 Sep 22 18:01]  [01;34msecurity[0m
+│   │   │   │               │   ├── [       3233 Sep 22 18:01]  [01;32mRateLimitFilter.java[0m
+│   │   │   │               │   ├── [       2032 Sep 22 18:01]  [01;32mRateLimitProperties.java[0m
+│   │   │   │               │   └── [       3414 Sep 22 18:01]  [01;32mRateLimitService.java[0m
+│   │   │   │               ├── [      27690 Sep 22 18:01]  [01;34mservice[0m
+│   │   │   │               │   ├── [      26305 Sep 24 02:39]  [01;34mimpl[0m
+│   │   │   │               │   │   ├── [       2373 Sep 24 06:06]  [01;32mProductoPurgeScheduler.java[0m
+│   │   │   │               │   │   └── [      23830 Sep 30 12:21]  [01;32mProductoServiceImpl.java[0m
+│   │   │   │               │   └── [       1337 Sep 24 06:31]  [01;32mProductoService.java[0m
+│   │   │   │               └── [       1359 Sep 24 02:40]  [01;32mServicioApplication.java[0m
+│   │   │   └── [      10127 Sep 22 18:01]  [01;34mresources[0m
+│   │   │       ├── [       1392 Sep 30 12:21]  [01;32mapplication.properties[0m
+│   │   │       └── [       8673 Sep 21 11:19]  [01;34mtemplates[0m
+│   │   │           └── [       8655 Sep 22 18:01]  [01;34mproductos[0m
+│   │   │               ├── [       3511 Sep 22 18:01]  [01;32mform.html[0m
+│   │   │               └── [       5106 Sep 22 18:01]  [01;32mindex.html[0m
+│   │   └── [       1538 Sep 23 17:25]  [01;34mtest[0m
+│   │       └── [       1530 Sep 21 03:27]  [01;34mjava[0m
+│   │           └── [       1524 Sep 21 03:27]  [01;34mcom[0m
+│   │               └── [       1510 Sep 21 03:27]  [01;34mexample[0m
+│   │                   └── [       1494 Sep 22 18:01]  [01;34mservicio[0m
+│   │                       ├── [        466 Sep 23 12:34]  [01;32mServicioApplicationTests.java[0m
+│   │                       ├── [        576 Sep 22 18:01]  [01;32mTestcontainersConfiguration.java[0m
+│   │                       └── [        274 Sep 22 18:01]  [01;32mTestServicioApplication.java[0m
+│   └── [     203483 Sep 29 21:52]  [01;34mtarget[0m
+│       ├── [     143486 Sep 28 18:55]  [01;34mclasses[0m
+│       │   ├── [       1392 Sep 30 12:22]  [01;32mapplication.properties[0m
+│       │   ├── [     133353 Sep 28 18:55]  [01;34mcom[0m
+│       │   │   └── [     133339 Sep 28 18:55]  [01;34mexample[0m
+│       │   │       └── [     133323 Sep 30 12:23]  [01;34mservicio[0m
+│       │   │           ├── [       7399 Sep 30 12:23]  [01;34mclient[0m
+│       │   │           │   ├── [        635 Sep 30 12:23]  InterServiceClient$1.class
+│       │   │           │   └── [       6664 Sep 30 12:23]  InterServiceClient.class
+│       │   │           ├── [      12298 Sep 30 12:23]  [01;34mconfig[0m
+│       │   │           │   ├── [       2730 Sep 30 12:23]  CorsConfig.class
+│       │   │           │   ├── [       2163 Sep 30 12:23]  InterServiceConfigVerifier.class
+│       │   │           │   ├── [       2527 Sep 30 12:23]  RestClientConfig.class
+│       │   │           │   └── [       4698 Sep 30 12:23]  SecurityConfig.class
+│       │   │           ├── [      22852 Sep 30 12:23]  [01;34mcontroller[0m
+│       │   │           │   ├── [        976 Sep 30 12:23]  ProductoController$1.class
+│       │   │           │   ├── [      13280 Sep 30 12:23]  ProductoController.class
+│       │   │           │   └── [       8440 Sep 30 12:23]  ProductoViewController.class
+│       │   │           ├── [      12414 Sep 30 12:23]  [01;34mdto[0m
+│       │   │           │   ├── [       2731 Sep 30 12:23]  ProductoPageResponse.class
+│       │   │           │   ├── [       3032 Sep 30 12:23]  ProductoRequest.class
+│       │   │           │   └── [       6513 Sep 30 12:23]  ProductoResponse.class
+│       │   │           ├── [      17104 Sep 30 12:23]  [01;34mentity[0m
+│       │   │           │   ├── [       1378 Sep 30 12:23]  BaseEntity.class
+│       │   │           │   ├── [       1422 Sep 30 12:23]  Producto$EstadoProducto.class
+│       │   │           │   ├── [       7246 Sep 30 12:23]  Producto.class
+│       │   │           │   ├── [        253 Sep 30 12:23]  ProductoGrupos$AlCrear.class
+│       │   │           │   ├── [        258 Sep 30 12:23]  ProductoGrupos.class
+│       │   │           │   ├── [       3048 Sep 30 12:23]  ProductoImagen.class
+│       │   │           │   └── [       3217 Sep 30 12:23]  Variante.class
+│       │   │           ├── [      10235 Sep 30 12:23]  [01;34mexception[0m
+│       │   │           │   ├── [        454 Sep 30 12:23]  BusinessRuleException.class
+│       │   │           │   ├── [       6971 Sep 30 12:23]  GlobalExceptionHandler.class
+│       │   │           │   ├── [        676 Sep 30 12:23]  InterServiceUnavailableException.class
+│       │   │           │   ├── [        466 Sep 30 12:23]  ResourceNotFoundException.class
+│       │   │           │   └── [       1360 Sep 30 12:23]  VersionConflictException.class
+│       │   │           ├── [       9824 Sep 30 12:23]  [01;34mrepository[0m
+│       │   │           │   ├── [       1860 Sep 30 12:23]  ProductoImagenRepository.class
+│       │   │           │   ├── [       6102 Sep 30 12:23]  ProductoRepository.class
+│       │   │           │   └── [       1706 Sep 30 12:23]  VarianteRepository.class
+│       │   │           ├── [       9211 Sep 30 12:23]  [01;34msecurity[0m
+│       │   │           │   ├── [       2833 Sep 30 12:23]  RateLimitFilter.class
+│       │   │           │   ├── [       1474 Sep 30 12:23]  RateLimitProperties.class
+│       │   │           │   ├── [        732 Sep 30 12:23]  RateLimitService$RequestCounter.class
+│       │   │           │   └── [       3962 Sep 30 12:23]  RateLimitService.class
+│       │   │           ├── [      30986 Sep 30 12:23]  [01;34mservice[0m
+│       │   │           │   ├── [      28456 Sep 30 12:23]  [01;34mimpl[0m
+│       │   │           │   │   ├── [       3082 Sep 30 12:23]  ProductoPurgeScheduler.class
+│       │   │           │   │   └── [      25268 Sep 30 12:23]  ProductoServiceImpl.class
+│       │   │           │   └── [       2480 Sep 30 12:23]  ProductoService.class
+│       │   │           └── [        820 Sep 30 12:23]  ServicioApplication.class
+│       │   └── [       8673 Sep 28 18:55]  [01;34mtemplates[0m
+│       │       └── [       8655 Sep 28 18:55]  [01;34mproductos[0m
+│       │           ├── [       3511 Sep 28 18:55]  [01;32mform.html[0m
+│       │           └── [       5106 Sep 28 18:55]  [01;32mindex.html[0m
+│       ├── [         22 Sep 30 12:23]  [01;34mgenerated-sources[0m
+│       │   └── [          0 Sep 30 12:23]  [01;34mannotations[0m
+│       ├── [         32 Sep 28 18:53]  [01;34mgenerated-test-sources[0m
+│       │   └── [          0 Sep 28 18:53]  [01;34mtest-annotations[0m
+│       ├── [       7563 Sep 28 18:52]  [01;34mmaven-status[0m
+│       │   └── [       7521 Sep 28 18:53]  [01;34mmaven-compiler-plugin[0m
+│       │       ├── [       6759 Sep 28 18:52]  [01;34mcompile[0m
+│       │       │   └── [       6729 Sep 28 18:52]  [01;34mdefault-compile[0m
+│       │       │       ├── [       1923 Sep 30 12:23]  [01;32mcreatedFiles.lst[0m
+│       │       │       └── [       4746 Sep 30 12:25]  [01;32minputFiles.lst[0m
+│       │       └── [        726 Sep 28 18:53]  [01;34mtestCompile[0m
+│       │           └── [        688 Sep 28 18:54]  [01;34mdefault-testCompile[0m
+│       │               ├── [        158 Sep 28 18:54]  [01;32mcreatedFiles.lst[0m
+│       │               └── [        470 Sep 30 12:25]  [01;32minputFiles.lst[0m
+│       ├── [      48416 Sep 29 21:52]  [01;34msurefire-reports[0m
+│       │   ├── [        340 Sep 29 21:52]  [01;32mcom.example.servicio.ServicioApplicationTests.txt[0m
+│       │   └── [      47870 Sep 29 21:52]  [01;32mTEST-com.example.servicio.ServicioApplicationTests.xml[0m
+│       └── [       3792 Sep 28 18:55]  [01;34mtest-classes[0m
+│           └── [       3786 Sep 28 18:55]  [01;34mcom[0m
+│               └── [       3772 Sep 28 18:55]  [01;34mexample[0m
+│                   └── [       3756 Sep 28 18:55]  [01;34mservicio[0m
+│                       ├── [        824 Sep 28 18:55]  [01;32mServicioApplicationTests.class[0m
+│                       ├── [       1036 Sep 28 18:55]  [01;32mTestcontainersConfiguration.class[0m
+│                       └── [       1712 Sep 28 18:55]  [01;32mTestServicioApplication.class[0m
+├── [       4984 Sep 29 17:47]  [01;32mstart.sh[0m
+└── [       5981 Sep 30 11:03]  VERIFICACION_SUSTENTACION.md
+
+      578616 bytes used in 71 directories, 118 files
