@@ -151,6 +151,8 @@ cd servicio
 ./mvnw spring-boot:run
 ```
 
+La aplicación usa MongoDB local por defecto. Para Atlas, define `SPRING_MONGODB_URI` en el entorno antes de arrancar; no guardes la URI ni credenciales en este archivo. Las credenciales que estuvieron versionadas deben rotarse antes del despliegue.
+
 ---
 
 ## 📡 Endpoints de la API REST (`/api/v1/productos`)
