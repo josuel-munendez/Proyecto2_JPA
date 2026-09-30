@@ -1,0 +1,129 @@
+{
+  "info": {
+    "_postman_id": "82f536fb-9ac9-4a59-8c5b-8dbf314e6049",
+    "name": "Proyecto 2 y 3 - Productos JPA y MongoDB",
+    "description": "CRUD, busquedas AND/OR, validacion, paginacion, errores y prueba manual del rate limit. El request DELETE normal es logico y responde 204 sin body.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "jpaBaseUrl", "value": "http://localhost:8082", "type": "string" },
+    { "key": "mongoBaseUrl", "value": "http://localhost:8083", "type": "string" },
+    { "key": "jpaProductId", "value": "", "type": "string" },
+    { "key": "jpaProductVersion", "value": "0", "type": "string" },
+    { "key": "mongoProductId", "value": "", "type": "string" },
+    { "key": "jpaProductName", "value": "", "type": "string" },
+    { "key": "jpaProductReference", "value": "", "type": "string" },
+    { "key": "mongoProductName", "value": "", "type": "string" },
+    { "key": "mongoProductReference", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "JPA PostgreSQL (8082)",
+      "item": [
+        {
+          "name": "Listar pagina 0",
+          "request": { "method": "GET", "url": "{{jpaBaseUrl}}/api/v1/productos?page=0&page_size=10" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "pm.test('Respuesta paginada', () => pm.expect(pm.response.json()).to.have.property('content'));", "pm.test('Pagina acotada', () => pm.expect(pm.response.json().pageSize).to.be.at.most(10));"] } }]
+        },
+        {
+          "name": "Reto 1 - busqueda AND (nombre + estado)",
+          "request": { "method": "GET", "url": "{{jpaBaseUrl}}/api/v1/productos/buscar/and?nombre=Buzo&estado=ACTIVO&page=0&size=10" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "pm.test('Resultado paginado', () => pm.expect(pm.response.json()).to.have.property('content'));", "pm.test('AND encuentra coincidencias del catalogo sembrado', () => pm.expect(pm.response.json().totalElements).to.be.greaterThan(0));"] } }]
+        },
+        {
+          "name": "Reto 1 - busqueda OR (nombre, descripcion o referencia)",
+          "request": { "method": "GET", "url": "{{jpaBaseUrl}}/api/v1/productos/buscar/or?query=Buzo&page=0&size=10" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "pm.test('Resultado paginado', () => pm.expect(pm.response.json()).to.have.property('content'));", "pm.test('OR encuentra coincidencias del catalogo sembrado', () => pm.expect(pm.response.json().totalElements).to.be.greaterThan(0));"] } }]
+        },
+        {
+          "name": "Crear producto valido",
+          "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["const stamp = Date.now().toString().slice(-8);", "pm.collectionVariables.set('jpaProductName', 'Producto Postman ' + stamp);", "pm.collectionVariables.set('jpaProductReference', 'PM-' + stamp);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"{{jpaProductName}}\",\n  \"descripcion\": \"Producto de prueba Postman\",\n  \"precioBase\": 50000,\n  \"referencia\": \"{{jpaProductReference}}\",\n  \"stock\": 5\n}" }, "url": "{{jpaBaseUrl}}/api/v1/productos" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 201', () => pm.response.to.have.status(201));", "const data = pm.response.json();", "pm.expect(data.id).to.exist;", "pm.collectionVariables.set('jpaProductId', String(data.id));", "pm.collectionVariables.set('jpaProductVersion', String(data.version ?? 0));"] } }]
+        },
+        {
+          "name": "Reto 4 - validar rechazo de entrada invalida",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"x\",\n  \"descripcion\": \"\",\n  \"precioBase\": 1,\n  \"referencia\": \"mal\",\n  \"stock\": -1\n}" }, "url": "{{jpaBaseUrl}}/api/v1/productos" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 400 por validacion', () => pm.response.to.have.status(400));", "pm.test('Respuesta JSON de error', () => pm.expect(pm.response.json()).to.have.property('message'));"] } }]
+        },
+        {
+          "name": "Obtener producto creado",
+          "request": { "method": "GET", "url": "{{jpaBaseUrl}}/api/v1/productos/{{jpaProductId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "pm.test('ID coincide', () => pm.expect(String(pm.response.json().id)).to.eql(pm.collectionVariables.get('jpaProductId')));"] } }]
+        },
+        {
+          "name": "Actualizar producto",
+          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"{{jpaProductName}} Editado\",\n  \"descripcion\": \"Actualizado desde Postman\",\n  \"precioBase\": 55000,\n  \"referencia\": \"{{jpaProductReference}}\",\n  \"stock\": 8,\n  \"version\": {{jpaProductVersion}}\n}" }, "url": "{{jpaBaseUrl}}/api/v1/productos/{{jpaProductId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('jpaProductVersion', String(pm.response.json().version ?? 0));"] } }]
+        },
+        {
+          "name": "Reto 2 - error 404 centralizado",
+          "request": { "method": "GET", "url": "{{jpaBaseUrl}}/api/v1/productos/-999999" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 404', () => pm.response.to.have.status(404));", "pm.test('Payload de error', () => pm.expect(pm.response.json()).to.have.property('status', 404));"] } }]
+        },
+        {
+          "name": "Eliminar producto (soft delete, sin body)",
+          "request": { "method": "DELETE", "url": "{{jpaBaseUrl}}/api/v1/productos/{{jpaProductId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 204 No Content', () => pm.response.to.have.status(204));", "pm.test('Sin body', () => pm.expect(pm.response.text()).to.eql(''));"] } }]
+        },
+        {
+          "name": "Confirmar borrado logico",
+          "request": { "method": "GET", "url": "{{jpaBaseUrl}}/api/v1/productos/{{jpaProductId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('El detalle sigue consultable', () => pm.response.to.have.status(200));", "pm.test('Marcado como borrado', () => pm.expect(pm.response.json().wasDeleted).to.eql(true));"] } }]
+        }
+      ]
+    },
+    {
+      "name": "MongoDB (8083)",
+      "item": [
+        {
+          "name": "Listar pagina Mongo",
+          "request": { "method": "GET", "url": "{{mongoBaseUrl}}/api/v1/productos?page=0&size=10" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "pm.test('Respuesta paginada', () => pm.expect(pm.response.json()).to.have.property('content'));"] } }]
+        },
+        {
+          "name": "Mongo - busqueda AND",
+          "request": { "method": "GET", "url": "{{mongoBaseUrl}}/api/v1/productos?nombre=Buzo&estado=ACTIVO&page=0&size=10" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Mongo - busqueda OR",
+          "request": { "method": "GET", "url": "{{mongoBaseUrl}}/api/v1/productos?search=Buzo&page=0&size=10" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Mongo - crear",
+          "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["const stamp = Date.now().toString().slice(-8);", "pm.collectionVariables.set('mongoProductName', 'Producto Mongo ' + stamp);", "pm.collectionVariables.set('mongoProductReference', 'MG-' + stamp);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"{{mongoProductName}}\",\n  \"descripcion\": \"Prueba de Mongo desde Postman\",\n  \"precioBase\": 50000,\n  \"referencia\": \"{{mongoProductReference}}\",\n  \"stock\": 5\n}" }, "url": "{{mongoBaseUrl}}/api/v1/productos" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('mongoProductId', String(pm.response.json().id));"] } }]
+        },
+        {
+          "name": "Mongo - obtener producto",
+          "request": { "method": "GET", "url": "{{mongoBaseUrl}}/api/v1/productos/{{mongoProductId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Mongo - actualizar",
+          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"{{mongoProductName}} Editado\",\n  \"descripcion\": \"Actualizado desde Postman\",\n  \"precioBase\": 55000,\n  \"referencia\": \"{{mongoProductReference}}\",\n  \"stock\": 8\n}" }, "url": "{{mongoBaseUrl}}/api/v1/productos/{{mongoProductId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Mongo - eliminar (soft delete)",
+          "request": { "method": "DELETE", "url": "{{mongoBaseUrl}}/api/v1/productos/{{mongoProductId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"] } }]
+        }
+      ]
+    },
+    {
+      "name": "Rate limit (ejecutar manualmente, no incluir en Run all)",
+      "description": "El limite GET por defecto es 120 solicitudes por minuto por IP. Ejecuta solo este request en Collection Runner con 121 iteraciones dentro de un minuto; deben verse respuestas 200 y al menos un 429. No uses Run all para esta prueba.",
+      "item": [
+        {
+          "name": "Probar limite GET JPA",
+          "request": { "method": "GET", "url": "{{jpaBaseUrl}}/api/v1/productos?page=0&page_size=1" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Resultado permitido o rate limit', () => pm.expect([200, 429]).to.include(pm.response.code));", "if (pm.response.code === 429) pm.test('429 Too Many Requests', () => pm.expect(pm.response.json().status).to.eql(429));"] } }]
+        }
+      ]
+    }
+  ]
+}
