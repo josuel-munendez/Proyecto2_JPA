@@ -16,13 +16,13 @@ import org.springframework.core.annotation.Order;
  * Solo se ajusta el pool; la cadena de conexion la aplica Spring Boot por su
  * cuenta a partir de las connection details. Injectarla aqui a proposito
  * seria un error: en los tests la URI no llega como propiedad
- * spring.data.mongodb.uri sino como MongoDBContainer de Testcontainers, asi
+ * spring.mongodb.uri sino como MongoDBContainer de Testcontainers, asi
  * que leerla con @Value rompia el contexto entero. De delegar en Boot ademas
  * se evita pisar lo que venga bien puesto en la URI (tls, retryWrites,
  * replicaSet) y se respeta el contenedor de los tests sin tocar nada.
  *
  * El tuning vive en el codigo y no en la URI porque la URI viene de
- * SPRING_DATA_MONGODB_URI, que es un secreto y por tanto no se versiona: si
+ * SPRING_MONGODB_URI, que es un secreto y por tanto no se versiona: si
  * el tuning se dejara ahi seria invisible para quien lea el repositorio.
  *
  * Todos los valores son sobreescribibles por propiedad, para poder ajustarlos

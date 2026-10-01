@@ -39,3 +39,7 @@ servicio/cp.txt
 
 .github/
 .github/*
+
+# Generado por start.sh: contiene la URI de MongoDB con credenciales
+servicio/config-local.properties
+config-local.properties

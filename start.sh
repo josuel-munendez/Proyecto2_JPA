@@ -55,6 +55,82 @@ for clave in INTERNAL_API_TOKEN DJANGO_BASE_URL; do
     fi
 done
 
+# ── Credenciales de MongoDB ──────────────────────────────────────────────────
+# application.properties lee ${SPRING_MONGODB_URI}. Si la variable no
+# llega a estar definida, Spring Boot NO falla: usa su valor por defecto
+# mongodb://localhost:27017/test. Ese silencio es peligroso, porque el
+# mongod local no exige autenticacion y el servicio empieza a guardar el
+# catalogo ahi, creyendo que escribe en Atlas. Por eso aqui se cablea la URI
+# y, si de verdad no se encuentra ninguna, se aborta.
+#
+# Orden de precedencia:
+#   1. SPRING_MONGODB_URI ya exportada en el entorno
+#   2. SPRING_MONGODB_URI del .env de Django
+#   3. MONGODB_URI del .env de Django (se le cambia la base a la de Spring)
+if [ -z "${SPRING_MONGODB_URI:-}" ]; then
+    SPRING_MONGODB_URI="$(leer_del_env SPRING_MONGODB_URI)"
+fi
+if [ -z "${SPRING_MONGODB_URI:-}" ]; then
+    mongo_uri_django="$(leer_del_env MONGODB_URI)"
+    if [ -n "$mongo_uri_django" ]; then
+        # Django usa la base 'projecto_formativo' y Spring la 'proyecto_formativo'.
+        # Se reapunta conservando usuario, credenciales, host y parametros.
+        #
+        # El orden importa: primero se separa la query, porque si se hiciera al
+        # reves el corte "${uri%/*}" se llevaria por delante el "?..." (va detras
+        # de la barra) y retryWrites/w=majority se perderian en silencio.
+        case "$mongo_uri_django" in
+            *\?*)
+                base_query="${mongo_uri_django%%\?*}"
+                params="${mongo_uri_django#*\?}"
+                ;;
+            *)
+                base_query="$mongo_uri_django"
+                params=""
+                ;;
+        esac
+        sin_base="${base_query%/*}"
+        SPRING_MONGODB_URI="${sin_base}/${MONGO_DB_PRODUCTOS:-proyecto_formativo}"
+        if [ -n "$params" ]; then
+            SPRING_MONGODB_URI="${SPRING_MONGODB_URI}?${params}"
+        fi
+    fi
+fi
+
+if [ -z "${SPRING_MONGODB_URI:-}" ]; then
+    echo "ERROR: no se encontro SPRING_MONGODB_URI ni MONGODB_URI en $ENV_DJANGO" >&2
+    echo "      Sin esto Spring arranca contra mongodb://localhost:27017/test," >&2
+    echo "      sin autenticacion, y el catalogo se guardaria en el sitio equivocado." >&2
+    echo "      Define SPRING_MONGODB_URI en el .env o exportala antes." >&2
+    exit 1
+fi
+export SPRING_MONGODB_URI
+
+# Solo el host, para no filtrar la contrasena ni al log ni a la consola.
+mongo_host="$(printf '%s' "$SPRING_MONGODB_URI" | sed -E 's|.*://[^@]*@||; s|[:/].*||')"
+echo "OK: SPRING_MONGODB_URI -> host=$mongo_host base=${MONGO_DB_PRODUCTOS:-proyecto_formativo}"
+
+# ── Materializacion de la configuracion local ─────────────────────────────────
+# Measured en este proyecto: la JVM que arranca spring-boot:run no recibe de
+# forma fiable el entorno heredado (se comprobo con /proc/<pid>/environ), y el
+# namespace spring.data.mongodb.* de Spring Boot 3 esta en 4.1.1 deprecado con
+# nivel "error", de modo que escribir ahi no da error: se ignora y Spring cae
+# en mongodb://127.0.0.1:27017/test sin credenciales.
+#
+# Para no depender de ninguna de esas dos cosas, la URI se escribe en un
+# archivo de propiedades externo y se le pasa a Spring con
+# spring.config.additional-location. Esa fuente tiene precedencia sobre
+# application.properties y sobre las variables de entorno, y como la ruta no
+# lleva ningun secreto, no queda la contrasena expuesta en `ps`.
+PROPS_LOCAL="$MODULO/config-local.properties"
+umask 077
+{
+    echo "# Generado por start.sh. NO versionar: contiene la URI con credenciales."
+    echo "spring.mongodb.uri=$SPRING_MONGODB_URI"
+} > "$PROPS_LOCAL"
+chmod 600 "$PROPS_LOCAL"
+echo "OK: $PROPS_LOCAL (600, ignorado por git)"
+
 # ── Credenciales de PostgreSQL ───────────────────────────────────────────────
 # Django se conecta con DATABASE_URL (formato libpq); JDBC no entiende ese
 # esquema. Se traduce: postgresql://user:pass@host/db?sslmode=require
@@ -104,4 +180,17 @@ echo "OK: DJANGO_BASE_URL=${DJANGO_BASE_URL:-http://127.0.0.1:8000}"
 
 # ── Arranque ────────────────────────────────────────────────────────────────
 cd "$MODULO"
-exec ./mvnw spring-boot:run "$@"
+
+# config-local.properties lleva la URI de MongoDB. Se pasa como
+# spring.config.additional-location, que Spring Boot procesa antes de cargar la
+# configuracion, asi que gana a application.properties.
+#
+# Los argumentos que llegan a este script se reenvian a Spring, no a Maven.
+# Antes se hacia exec ./mvnw spring-boot:run "$@", y Maven interpretaba
+# "--server.port=..." como opcion suya e imprimia su ayuda sin arrancar nada.
+RUN_ARGS="--spring.config.additional-location=file:./config-local.properties"
+if [ "$#" -gt 0 ]; then
+    RUN_ARGS="$RUN_ARGS $*"
+fi
+
+exec ./mvnw -Dspring-boot.run.arguments="$RUN_ARGS" spring-boot:run
